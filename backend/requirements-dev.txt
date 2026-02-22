@@ -1,0 +1,13 @@
+-r requirements.txt
+
+# Development tools
+ipython==8.20.0
+jupyter==1.0.0
+jupyterlab==4.0.10
+
+# Code formatting
+autopep8==2.0.4
+isort==5.13.2
+
+# Debugging
+ipdb==0.13.13

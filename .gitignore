@@ -1,0 +1,138 @@
+# ============================================================
+# OBELISK - .gitignore
+# ============================================================
+
+# ─── Python ──────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.env/
+.python-version
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+.eggs/
+wheels/
+
+# Testing & coverage
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+nosetests.xml
+pytest_cache/
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+
+# ─── Environment & Secrets ───────────────────────────────────
+# NEVER commit real .env files — only .env.example is tracked
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+backend/.env
+frontend/.env
+*.secret
+secrets/
+
+# ─── Node / Frontend ─────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# Build output
+frontend/build/
+frontend/dist/
+frontend/.next/
+frontend/out/
+
+# Cache
+.eslintcache
+.stylelintcache
+.parcel-cache/
+.cache/
+
+# ─── ML Models & Datasets ────────────────────────────────────
+# Large binary files — store with Git LFS or DVC instead
+# (directory structure is preserved via .gitkeep files)
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.onnx
+*.h5
+*.pkl
+*.joblib
+
+# Ignore actual dataset files but keep directory structure
+*.csv
+*.parquet
+*.jsonl
+# (JSON files in datasets only — project-level JSON is fine,
+#  so we keep this coarse; tighten per-subdir later if needed)
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ─── Docker ──────────────────────────────────────────────────
+# Persistent volume data (created at runtime)
+postgres_data/
+neo4j_data/
+redis_data/
+
+# ─── Logs ────────────────────────────────────────────────────
+*.log
+logs/
+*.log.*
+
+# ─── OS & Editor ─────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/settings.json
+
+# ─── Terraform ───────────────────────────────────────────────
+infrastructure/terraform/.terraform/
+infrastructure/terraform/*.tfstate
+infrastructure/terraform/*.tfstate.backup
+infrastructure/terraform/.terraform.lock.hcl
+infrastructure/terraform/terraform.tfvars
+!infrastructure/terraform/terraform.tfvars.example
+
+# ─── Alembic ─────────────────────────────────────────────────
+# Keep the versions directory tracked (only .gitkeep inside for now)
+# Actual migration files will be committed when generated
+
+# ─── Misc ────────────────────────────────────────────────────
+*.bak
+*.tmp
+*.orig
+tmp/
+temp/

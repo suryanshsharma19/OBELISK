@@ -1,0 +1,42 @@
+# FastAPI and dependencies
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+pydantic-settings==2.1.0
+python-multipart==0.0.6
+
+# Database
+sqlalchemy==2.0.25
+alembic==1.13.1
+psycopg2-binary==2.9.9
+neo4j==5.16.0
+redis==5.0.1
+
+# ML/AI
+torch==2.1.2
+transformers==4.36.2
+scikit-learn==1.4.0
+torch-geometric==2.4.0
+
+# Code Analysis
+tree-sitter==0.20.4
+tree-sitter-python==0.20.4
+
+# Utils
+httpx==0.26.0
+python-Levenshtein==0.23.0
+python-dotenv==1.0.0
+
+# Task Queue
+celery==5.3.6
+celery[redis]==5.3.6
+
+# Testing
+pytest==7.4.4
+pytest-asyncio==0.23.3
+pytest-cov==4.1.0
+
+# Code Quality
+black==24.1.1
+flake8==7.0.0
+mypy==1.8.0
