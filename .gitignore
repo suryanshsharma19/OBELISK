@@ -130,6 +130,10 @@ infrastructure/terraform/terraform.tfvars
 # Keep the versions directory tracked (only .gitkeep inside for now)
 # Actual migration files will be committed when generated
 
+# ─── Local-only project notes ───────────────────────────────
+PROJECT_INFO.txt
+SENTINEL_PROJECT_STRUCTURE.md
+
 # ─── Misc ────────────────────────────────────────────────────
 *.bak
 *.tmp
