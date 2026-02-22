@@ -1,0 +1,8 @@
+{
+  "short_name": "OBELISK",
+  "name": "OBELISK - Supply Chain Attack Detector",
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}

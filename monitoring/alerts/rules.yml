@@ -1,0 +1,4 @@
+groups:
+  - name: obelisk
+    rules: []
+    # TODO: add alert rules
