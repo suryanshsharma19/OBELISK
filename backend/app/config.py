@@ -1,4 +1,4 @@
-"""Configuration management for OBELISK."""
+"""App configuration — loads from .env via pydantic-settings."""
 
 from functools import lru_cache
 

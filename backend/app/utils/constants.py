@@ -1,4 +1,4 @@
-"""Application constants for OBELISK."""
+"""App-wide constants and enums."""
 
 from __future__ import annotations
 
@@ -42,7 +42,6 @@ DETECTION_WEIGHTS: Final[dict[str, float]] = {
     "dependency": 0.10,
 }
 
-# Top 50 npm packages used as typosquatting reference
 POPULAR_PACKAGES: Final[list[str]] = [
     "express", "react", "lodash", "axios", "moment",
     "chalk", "commander", "debug", "request", "bluebird",

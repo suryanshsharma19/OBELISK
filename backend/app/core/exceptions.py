@@ -1,4 +1,4 @@
-"""Custom exceptions for OBELISK."""
+"""Custom exception classes."""
 
 from __future__ import annotations
 

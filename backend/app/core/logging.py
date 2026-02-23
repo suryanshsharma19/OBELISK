@@ -1,4 +1,4 @@
-"""Logging configuration for OBELISK."""
+"""Logging setup — console + rotating file handler."""
 
 import logging
 import sys

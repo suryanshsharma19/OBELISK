@@ -1,1 +1,26 @@
-# TODO: implement
+"""SQLAlchemy engine & session factory."""
+
+from collections.abc import Generator
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+
+from app.config import get_settings
+
+settings = get_settings()
+
+engine = create_engine(
+    settings.postgres_url,
+    echo=settings.debug,
+    pool_pre_ping=True,
+)
+
+SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+
+
+def get_db() -> Generator[Session, None, None]:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
