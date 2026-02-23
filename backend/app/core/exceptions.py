@@ -1,4 +1,4 @@
-"""Custom exceptions for OBELISK - Supply Chain Attack Detector."""
+"""Custom exceptions for OBELISK."""
 
 from __future__ import annotations
 
@@ -6,7 +6,6 @@ from typing import Any
 
 
 class ObeliskException(Exception):
-    """Base exception for all OBELISK errors."""
 
     def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
         self.message = message
@@ -19,25 +18,14 @@ class ObeliskException(Exception):
         return self.message
 
 
-class ConfigurationError(ObeliskException):
-    """Raised when there is a configuration issue."""
+class ConfigurationError(ObeliskException): pass
 
+class DatabaseError(ObeliskException): pass
 
-class DatabaseError(ObeliskException):
-    """Raised on database connection or query errors."""
+class ModelLoadError(ObeliskException): pass
 
+class RegistryError(ObeliskException): pass
 
-class ModelLoadError(ObeliskException):
-    """Raised when an ML model fails to load."""
+class AnalysisError(ObeliskException): pass
 
-
-class RegistryError(ObeliskException):
-    """Raised on npm/PyPI registry API errors."""
-
-
-class AnalysisError(ObeliskException):
-    """Raised when package analysis fails."""
-
-
-class ValidationError(ObeliskException):
-    """Raised on input validation errors."""
+class ValidationError(ObeliskException): pass

@@ -1,9 +1,4 @@
-"""
-Logging configuration for OBELISK - Supply Chain Attack Detector.
-
-Provides centralized logging with console (colored) and rotating file
-handlers.  Log level is driven by the application's ``debug`` setting.
-"""
+"""Logging configuration for OBELISK."""
 
 import logging
 import sys
@@ -12,16 +7,12 @@ from pathlib import Path
 
 try:
     import colorlog
-
     _HAS_COLORLOG = True
 except ImportError:
     _HAS_COLORLOG = False
 
 from app.config import get_settings
 
-# ---------------------------------------------------------------------------
-# Defaults
-# ---------------------------------------------------------------------------
 LOG_DIR = Path("logs")
 LOG_DIR.mkdir(exist_ok=True)
 
@@ -39,12 +30,7 @@ COLOR_FORMAT = (
 )
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
 def _get_console_handler(debug: bool) -> logging.Handler:
-    """Return a stderr handler — colored in dev, JSON in prod."""
     handler = logging.StreamHandler(sys.stderr)
 
     if debug and _HAS_COLORLOG:
@@ -62,7 +48,6 @@ def _get_console_handler(debug: bool) -> logging.Handler:
     elif debug:
         formatter = logging.Formatter(LOG_FORMAT, datefmt=DATE_FORMAT)
     else:
-        # Production: JSON lines for easy ingestion
         formatter = logging.Formatter(JSON_FORMAT, datefmt=DATE_FORMAT)
 
     handler.setFormatter(formatter)
@@ -70,7 +55,6 @@ def _get_console_handler(debug: bool) -> logging.Handler:
 
 
 def _get_file_handler() -> logging.Handler:
-    """Return a rotating file handler (10 MB × 5 backups)."""
     handler = RotatingFileHandler(
         LOG_DIR / "obelisk.log",
         maxBytes=10 * 1024 * 1024,
@@ -81,30 +65,13 @@ def _get_file_handler() -> logging.Handler:
     return handler
 
 
-# ---------------------------------------------------------------------------
-# Public API
-# ---------------------------------------------------------------------------
-
 def setup_logger(name: str) -> logging.Logger:
-    """Create and return a fully configured logger.
-
-    Parameters
-    ----------
-    name:
-        Dotted logger name (typically ``__name__``).
-
-    Returns
-    -------
-    logging.Logger
-        Logger instance with console and file handlers attached.
-    """
     settings = get_settings()
     level = logging.DEBUG if settings.debug else logging.INFO
 
     logger = logging.getLogger(name)
     logger.setLevel(level)
 
-    # Avoid duplicate handlers when called more than once for the same name
     if not logger.handlers:
         console = _get_console_handler(settings.debug)
         console.setLevel(level)
@@ -114,7 +81,5 @@ def setup_logger(name: str) -> logging.Logger:
         file_handler.setLevel(logging.DEBUG)
         logger.addHandler(file_handler)
 
-    # Don't propagate to the root logger
     logger.propagate = False
-
     return logger
