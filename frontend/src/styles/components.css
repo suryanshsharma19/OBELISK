@@ -1,1 +1,55 @@
-/* TODO: styles */
+/**
+ * Shared component styles that can't be expressed in Tailwind alone.
+ */
+
+/* Card hover lift effect */
+.card-hover {
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Gradient text for hero headings */
+.gradient-text {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-info));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Pulse dot for "live" indicators */
+.pulse-dot {
+  position: relative;
+}
+
+.pulse-dot::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -12px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  animation: pulse-ring 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+  70%  { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* Badge used for threat levels */
+.threat-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
