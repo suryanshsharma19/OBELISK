@@ -1,9 +1,4 @@
-"""Initial schema — packages, analyses, alerts tables.
-
-Revision ID: 001
-Revises: —
-Create Date: 2025-02-22
-"""
+"""Initial schema - packages, analyses, alerts tables."""
 
 from alembic import op
 import sqlalchemy as sa
@@ -15,7 +10,6 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # --- packages ---
     op.create_table(
         "packages",
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
@@ -41,7 +35,6 @@ def upgrade() -> None:
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
     )
 
-    # --- analyses ---
     op.create_table(
         "analyses",
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
@@ -61,7 +54,6 @@ def upgrade() -> None:
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
     )
 
-    # --- alerts ---
     op.create_table(
         "alerts",
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),

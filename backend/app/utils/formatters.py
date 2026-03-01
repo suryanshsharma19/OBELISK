@@ -1,7 +1,4 @@
-"""Output formatting utilities.
-
-Convert raw DB / analysis data into the shapes the API schemas expect.
-"""
+"""Output formatting utilities."""
 
 from __future__ import annotations
 
@@ -16,7 +13,6 @@ def format_analysis_response(
     confidence: float,
     breakdown: dict[str, Any],
 ) -> dict[str, Any]:
-    """Shape the analysis block of an AnalyzeResponse."""
     return {
         "risk_score": round(risk_score, 2),
         "threat_level": threat_level,
@@ -27,7 +23,6 @@ def format_analysis_response(
 
 
 def format_package_summary(pkg: Any) -> dict[str, Any]:
-    """Turn an ORM Package row into a minimal summary dict."""
     return {
         "id": pkg.id,
         "name": pkg.name,
@@ -45,7 +40,6 @@ def format_package_summary(pkg: Any) -> dict[str, Any]:
 
 
 def format_alert_summary(alert: Any) -> dict[str, Any]:
-    """Turn an ORM Alert row into a summary dict."""
     return {
         "id": alert.id,
         "title": alert.title,
@@ -61,7 +55,6 @@ def format_alert_summary(alert: Any) -> dict[str, Any]:
 
 
 def _fmt_dt(dt: Optional[datetime]) -> Optional[str]:
-    """ISO-format a datetime or return None."""
     if dt is None:
         return None
     return dt.isoformat()

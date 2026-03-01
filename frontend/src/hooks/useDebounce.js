@@ -1,10 +1,4 @@
-/**
- * Debounce hook — delays a value update until `delay` ms have passed
- * without another change.  Perfect for search inputs.
- *
- * Usage:
- *   const debouncedQuery = useDebounce(query, 300);
- */
+// Debounce hook - delays value updates
 
 import { useState, useEffect } from 'react';
 

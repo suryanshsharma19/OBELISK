@@ -1,4 +1,4 @@
-"""Shared FastAPI dependencies — DB sessions, auth, etc."""
+"""Shared FastAPI dependencies."""
 
 from collections.abc import Generator
 
@@ -9,7 +9,6 @@ from app.db.session import SessionLocal
 
 
 def get_db() -> Generator[Session, None, None]:
-    """Yield a database session, auto-close after request."""
     db = SessionLocal()
     try:
         yield db

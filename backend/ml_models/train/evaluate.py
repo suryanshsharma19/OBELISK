@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
-"""
-Model evaluation script — run saved models against a test dataset
-and report precision, recall, F1-score, and confusion matrix.
-
-Usage:
-    python evaluate.py --model codebert --dataset ../datasets/test_code.csv
-    python evaluate.py --model isolation_forest --dataset ../datasets/test_maintainers.csv
-"""
+"""Model evaluation - run saved models against a test dataset."""
 
 import argparse
 import csv
@@ -17,7 +10,6 @@ import numpy as np
 
 
 def evaluate_codebert(model_path: str, dataset_path: str) -> dict:
-    """Evaluate the fine-tuned CodeBERT model."""
     import torch
     from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
@@ -46,7 +38,6 @@ def evaluate_codebert(model_path: str, dataset_path: str) -> dict:
 
 
 def evaluate_isolation_forest(model_path: str, dataset_path: str) -> dict:
-    """Evaluate the Isolation Forest model."""
     import joblib
 
     model = joblib.load(Path(model_path) / "model.joblib")
@@ -78,7 +69,6 @@ def evaluate_isolation_forest(model_path: str, dataset_path: str) -> dict:
 
 
 def _compute_metrics(labels: list[int], predictions: list[int]) -> dict:
-    """Compute precision, recall, F1 and build a confusion matrix."""
     tp = sum(1 for l, p in zip(labels, predictions) if l == 1 and p == 1)
     fp = sum(1 for l, p in zip(labels, predictions) if l == 0 and p == 1)
     fn = sum(1 for l, p in zip(labels, predictions) if l == 1 and p == 0)

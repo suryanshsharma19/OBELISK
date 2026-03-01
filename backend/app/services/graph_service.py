@@ -1,13 +1,4 @@
-"""Graph Service — higher-level Neo4j operations.
-
-Wraps the raw Neo4j client with business logic for building and
-querying the package dependency graph.
-
-Functions:
-    build_dependency_graph:  Populate Neo4j from a package analysis
-    get_package_graph:       Retrieve the subgraph for a package
-    get_graph_stats:         Summary stats about the whole graph
-"""
+"""Higher-level Neo4j operations for the dependency graph."""
 
 from __future__ import annotations
 
@@ -19,7 +10,6 @@ logger = setup_logger(__name__)
 
 
 def _get_client():
-    """Lazy import to avoid connection issues at module load."""
     from app.db.neo4j_client import neo4j_client
     return neo4j_client
 
@@ -32,16 +22,12 @@ def build_dependency_graph(
     is_malicious: bool,
     dependencies: list[dict[str, Any]],
 ) -> None:
-    """
-    Create / update the package node and all its dependency edges.
-    Designed to be called after analysis completes.
-    """
     client = _get_client()
     try:
-        # Root node
+        # root node
         client.create_package_node(name, version, registry, risk_score, is_malicious)
 
-        # Dependency edges
+        # dependency edges
         for dep in dependencies:
             dep_ver = str(dep.get("version", "0.0.0")).lstrip("^~>=")
             client.create_dependency_edge(
@@ -57,7 +43,6 @@ def build_dependency_graph(
 
 
 def get_package_graph(name: str, max_depth: int = 3) -> dict[str, Any]:
-    """Return the dependency subgraph for *name*."""
     client = _get_client()
     try:
         deps = client.get_dependencies(name, max_depth=max_depth)
@@ -74,7 +59,6 @@ def get_package_graph(name: str, max_depth: int = 3) -> dict[str, Any]:
 
 
 def get_graph_stats() -> dict[str, Any]:
-    """Return high-level statistics about the Neo4j graph."""
     client = _get_client()
     try:
         node_count = client.run_query("MATCH (n:Package) RETURN count(n) AS cnt")

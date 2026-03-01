@@ -1,9 +1,4 @@
-"""Pydantic models for user data.
-
-Basic user model for future auth support.
-For now OBELISK doesn't have login — this exists
-so the DB schema is ready when we add it.
-"""
+"""Pydantic models for user data (placeholder for future auth)."""
 
 from datetime import datetime
 from typing import Optional

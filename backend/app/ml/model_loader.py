@@ -1,14 +1,4 @@
-"""Shared model-loading utilities.
-
-Centralises logic for locating, downloading, and caching ML models
-so individual detectors don't duplicate boilerplate.
-
-Functions:
-    load_pytorch_model:  Load a `.pt` / `.pth` checkpoint
-    load_sklearn_model:  Load a joblib-serialised scikit-learn model
-    ensure_model_dir:    Create the model directory if missing
-    get_model_path:      Resolve a model name to an absolute path
-"""
+"""Model loading utilities for PyTorch and sklearn."""
 
 from __future__ import annotations
 
@@ -23,19 +13,16 @@ from app.core.logging import setup_logger
 logger = setup_logger(__name__)
 settings = get_settings()
 
-# Root directory where saved models live
 MODEL_ROOT = Path("ml_models/saved_models")
 
 
 def ensure_model_dir(subdir: str = "") -> Path:
-    """Make sure the model directory exists; return the path."""
     path = MODEL_ROOT / subdir if subdir else MODEL_ROOT
     path.mkdir(parents=True, exist_ok=True)
     return path
 
 
 def get_model_path(name: str) -> Path:
-    """Resolve a model *name* (e.g. 'codebert') to a directory path."""
     path = MODEL_ROOT / name
     if not path.exists():
         logger.warning("Model directory does not exist: %s", path)
@@ -43,12 +30,6 @@ def get_model_path(name: str) -> Path:
 
 
 def load_pytorch_model(path: str | Path, map_location: str = "cpu") -> Any:
-    """
-    Load a PyTorch checkpoint.
-
-    Returns the loaded state dict or model object.
-    Raises ModelLoadError if the file is missing or corrupt.
-    """
     path = Path(path)
     if not path.exists():
         raise ModelLoadError(
@@ -71,12 +52,6 @@ def load_pytorch_model(path: str | Path, map_location: str = "cpu") -> Any:
 
 
 def load_sklearn_model(path: str | Path) -> Any:
-    """
-    Load a scikit-learn model serialised with joblib.
-
-    Returns the deserialised estimator.
-    Raises ModelLoadError if the file is missing or corrupt.
-    """
     path = Path(path)
     if not path.exists():
         raise ModelLoadError(
@@ -99,7 +74,6 @@ def load_sklearn_model(path: str | Path) -> Any:
 
 
 def list_available_models() -> list[str]:
-    """Return names of model directories under MODEL_ROOT."""
     if not MODEL_ROOT.exists():
         return []
     return [

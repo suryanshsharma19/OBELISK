@@ -1,9 +1,4 @@
-/**
- * Root application component.
- *
- * Defines the route tree and wraps everything in the shell layout
- * (Header + Navbar + main content + Footer + Toast).
- */
+// Root application component
 
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
@@ -21,6 +16,7 @@ import AnalyzePage from './pages/AnalyzePage';
 import PackagesPage from './pages/PackagesPage';
 import AlertsPage from './pages/AlertsPage';
 import SettingsPage from './pages/SettingsPage';
+import PackageDetailPage from './pages/PackageDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 // Lazy-load the crawler page to keep initial bundle small
@@ -49,6 +45,7 @@ export default function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/analyze" element={<AnalyzePage />} />
               <Route path="/packages" element={<PackagesPage />} />
+              <Route path="/packages/:id" element={<PackageDetailPage />} />
               <Route path="/alerts" element={<AlertsPage />} />
               <Route path="/crawler" element={<CrawlerPage />} />
               <Route path="/settings" element={<SettingsPage />} />

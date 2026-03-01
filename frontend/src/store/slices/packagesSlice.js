@@ -1,11 +1,7 @@
-/**
- * Redux slice for package state — list, detail, and analysis.
- */
+// Redux slice for package state
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import * as api from '../../services/api';
-
-/* ── Async thunks ────────────────────────────────────────────── */
 
 export const fetchPackages = createAsyncThunk(
   'packages/fetchAll',
@@ -40,7 +36,6 @@ export const analyzePackage = createAsyncThunk(
   },
 );
 
-/* ── Slice ───────────────────────────────────────────────────── */
 
 const packagesSlice = createSlice({
   name: 'packages',

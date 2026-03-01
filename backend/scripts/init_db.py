@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""
-Initialise the OBELISK database.
-
-Creates all tables defined in the ORM if they don't already exist.
-Intended to be run once during first deployment or local setup.
-
-Usage:
-    python -m scripts.init_db
-"""
+"""Initialise the OBELISK database tables."""
 
 import sys
 from pathlib import Path
@@ -27,7 +19,6 @@ logger = setup_logger("init_db")
 
 
 def init_database() -> None:
-    """Create all tables and print confirmation."""
     settings = get_settings()
     logger.info("Connecting to PostgreSQL at %s:%d/%s",
                 settings.postgres_host, settings.postgres_port, settings.postgres_db)

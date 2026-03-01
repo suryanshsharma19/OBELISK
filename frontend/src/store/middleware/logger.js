@@ -1,7 +1,4 @@
-/**
- * Redux logger middleware — logs dispatched actions in development.
- * Disabled in production to keep the console clean.
- */
+// Redux logger middleware (dev only)
 
 const logger = (store) => (next) => (action) => {
   if (process.env.NODE_ENV === 'development') {

@@ -1,4 +1,4 @@
-"""Input validators — each returns (is_valid, error_msg)."""
+"""Input validators - each returns (is_valid, error_msg)."""
 
 import re
 from urllib.parse import urlparse

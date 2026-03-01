@@ -1,10 +1,4 @@
-/**
- * Custom hook for API calls with loading / error state.
- *
- * Usage:
- *   const { data, loading, error, execute } = useApi(getPackages);
- *   useEffect(() => { execute({ limit: 20 }); }, [execute]);
- */
+// Hook for API calls with loading/error state
 
 import { useState, useCallback } from 'react';
 

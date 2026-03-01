@@ -1,18 +1,4 @@
-"""Abstract base class for all ML detectors.
-
-Every detector in the ML pipeline inherits from BaseDetector and
-implements the `analyze()` method.  This pattern lets the analysis
-service treat all detectors uniformly.
-
-Classes:
-    BaseDetector: abstract parent for typosquat, code_analyzer, etc.
-
-Usage:
-    class MyDetector(BaseDetector):
-        name = "my_detector"
-        async def analyze(self, **kwargs) -> DetectionResult:
-            ...
-"""
+"""Abstract base class for all ML detectors."""
 
 from __future__ import annotations
 
@@ -32,21 +18,13 @@ class BaseDetector(ABC):
     # Subclasses should override these
     name: str = "base"
     version: str = "1.0.0"
-    weight: float = 0.0  # contribution weight in final risk score
+    weight: float = 0.0
 
     def __init__(self) -> None:
         self._is_ready = False
         logger.debug("Initialising detector: %s v%s", self.name, self.version)
 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
-
     async def run(self, **kwargs: Any) -> DetectionResult:
-        """
-        Wrapper around analyze() that adds timing and error handling.
-        Callers should use this instead of analyze() directly.
-        """
         start = time.perf_counter()
         try:
             result = await self.analyze(**kwargs)
@@ -64,7 +42,7 @@ class BaseDetector(ABC):
                 "Detector %s failed after %.1fms: %s",
                 self.name, elapsed_ms, exc,
             )
-            # Return a zero-score result rather than crashing the pipeline
+            # return zero-score rather than crashing the pipeline
             return DetectionResult(
                 score=0.0,
                 confidence=0.0,
@@ -75,15 +53,9 @@ class BaseDetector(ABC):
 
     @abstractmethod
     async def analyze(self, **kwargs: Any) -> DetectionResult:
-        """Run the actual detection logic.  Subclasses *must* implement."""
         ...
 
-    # ------------------------------------------------------------------
-    # Optional lifecycle hooks
-    # ------------------------------------------------------------------
-
     def load_model(self) -> None:
-        """Override to load weights / resources at startup."""
         self._is_ready = True
 
     @property

@@ -1,27 +1,4 @@
-"""
-Risk Scorer — combines all detector outputs into a single threat assessment.
-
-The final risk score is a weighted average of the five detectors:
-  - Typosquatting:   25%
-  - Code Analysis:   35%
-  - Behavior:        15%
-  - Maintainer:      15%
-  - Dependency:      10%
-
-Confidence is derived from detector agreement: the more detectors
-that agree on "suspicious" (score > 50), the higher the confidence.
-
-Classes:
-    RiskScorer
-
-Usage:
-    scorer = RiskScorer()
-    result = scorer.calculate_risk({
-        "typosquatting": DetectionResult(score=97.3, ...),
-        "code_analysis": DetectionResult(score=85.0, ...),
-        ...
-    })
-"""
+"""Risk scorer - combines all detector outputs into a final threat assessment."""
 
 from __future__ import annotations
 
@@ -34,10 +11,9 @@ from app.utils.helpers import calculate_threat_level, get_current_timestamp
 
 logger = setup_logger(__name__)
 
-# Score above which a detector "agrees" that the package is suspicious
+# score above which a detector "agrees" the package is suspicious
 AGREEMENT_THRESHOLD = 50.0
 
-# Risk score above which we flag the package as malicious
 MALICIOUS_THRESHOLD = 60.0
 
 
@@ -51,23 +27,13 @@ class RiskScorer:
         self,
         detection_results: dict[str, DetectionResult],
     ) -> AnalysisResult:
-        """
-        Compute the weighted risk score from all detector outputs.
-
-        Args:
-            detection_results: Mapping of detector_name → DetectionResult.
-
-        Returns:
-            AnalysisResult with combined score, threat level, confidence.
-        """
-        # Weighted sum
+        # weighted sum
         weighted_score = 0.0
         contributions: dict[str, dict[str, Any]] = {}
 
         for name, weight in self.weights.items():
             result = detection_results.get(name)
             if result is None:
-                # Detector didn't run — treat as zero
                 contributions[name] = {
                     "score": 0.0,
                     "weight": weight,
@@ -87,7 +53,7 @@ class RiskScorer:
         threat_level = calculate_threat_level(risk_score)
         is_malicious = risk_score >= MALICIOUS_THRESHOLD
 
-        # Calculate confidence based on detector agreement
+        # confidence based on detector agreement
         confidence = self._calculate_confidence(detection_results)
 
         logger.info(
@@ -109,18 +75,10 @@ class RiskScorer:
             analyzed_at=get_current_timestamp(),
         )
 
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
-
     def _calculate_confidence(
         self,
         detection_results: dict[str, DetectionResult],
     ) -> float:
-        """
-        Confidence = proportion of active detectors agreeing on
-        'suspicious' (score > AGREEMENT_THRESHOLD).
-        """
         if not detection_results:
             return 0.0
 

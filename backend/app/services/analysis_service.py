@@ -1,25 +1,4 @@
-"""
-Analysis Service — the main orchestrator.
-
-Coordinates the full detection pipeline:
-  1. Fetch package metadata from the registry
-  2. Download / extract code (if available)
-  3. Run all 5 detectors in parallel
-  4. Combine scores via RiskScorer
-  5. Persist results to PostgreSQL + Neo4j + Redis
-  6. Generate alerts for critical threats
-
-This is the module that the API route calls and the heart of OBELISK.
-
-Functions:
-    analyze_package: end-to-end analysis for a single package
-
-Dependencies:
-    - registry_monitor  (metadata fetching)
-    - all ML detectors  (typosquat, code, behavior, anomaly, gnn)
-    - risk_scorer       (weighted aggregation)
-    - DB sessions       (PostgreSQL / Neo4j / Redis)
-"""
+"""Analysis service - orchestrates the full detection pipeline."""
 
 from __future__ import annotations
 
@@ -42,7 +21,7 @@ from app.ml.typosquat import TyposquattingDetector
 
 logger = setup_logger(__name__)
 
-# Instantiate detectors (singletons — reused across requests)
+# detector singletons
 _typosquat = TyposquattingDetector()
 _code_analyzer = CodeAnalyzer()
 _behavior = BehaviorAnalyzer()
@@ -58,33 +37,16 @@ async def analyze_package(
     code: Optional[str],
     db: Session,
 ) -> dict[str, Any]:
-    """
-    Full end-to-end analysis pipeline for a single package.
-
-    Args:
-        name:     Package name (e.g. "expresss").
-        version:  Semver version (e.g. "1.0.0").
-        registry: "npm" or "pypi".
-        code:     Optional raw source code to scan.
-        db:       Active SQLAlchemy session.
-
-    Returns:
-        Dict matching the AnalyzeResponse schema.
-    """
     logger.info("Starting analysis for %s@%s (%s)", name, version, registry)
 
-    # ------------------------------------------------------------------
-    # Step 1 — Check the Redis cache
-    # ------------------------------------------------------------------
+    # check cache
     cache_key = f"analysis:{registry}:{name}:{version}"
     cached = _get_cached_result(cache_key)
     if cached is not None:
         logger.info("Cache hit for %s", cache_key)
         return cached
 
-    # ------------------------------------------------------------------
-    # Step 2 — Fetch registry metadata
-    # ------------------------------------------------------------------
+    # fetch registry metadata
     metadata = await _fetch_metadata(name, version, registry)
 
     # If no code was provided, try to get it from the registry response
@@ -97,9 +59,7 @@ async def analyze_package(
     # Extract dependency list
     dependencies = _extract_dependencies(metadata)
 
-    # ------------------------------------------------------------------
-    # Step 3 — Run ALL detectors in parallel
-    # ------------------------------------------------------------------
+    # run all detectors in parallel
     try:
         typo_res, code_res, behav_res, anomaly_res, gnn_res = await asyncio.gather(
             _typosquat.run(package_name=name),
@@ -120,9 +80,7 @@ async def analyze_package(
             details={"error": str(exc)},
         ) from exc
 
-    # ------------------------------------------------------------------
-    # Step 4 — Calculate combined risk score
-    # ------------------------------------------------------------------
+    # calculate combined risk score
     detection_results = {
         "typosquatting": typo_res,
         "code_analysis": code_res,
@@ -132,27 +90,19 @@ async def analyze_package(
     }
     analysis: AnalysisResult = _risk_scorer.calculate_risk(detection_results)
 
-    # ------------------------------------------------------------------
-    # Step 5 — Persist to PostgreSQL
-    # ------------------------------------------------------------------
+    # persist to PostgreSQL
     package_row, analysis_row = _persist_to_db(
         db, name, version, registry, metadata, analysis, detection_results,
     )
 
-    # ------------------------------------------------------------------
-    # Step 6 — Persist to Neo4j (best-effort)
-    # ------------------------------------------------------------------
+    # persist to Neo4j (best-effort)
     _persist_to_neo4j(name, version, registry, analysis.risk_score, analysis.is_malicious, dependencies)
 
-    # ------------------------------------------------------------------
-    # Step 7 — Cache the result in Redis
-    # ------------------------------------------------------------------
+    # cache in Redis
     response = _build_response(package_row, analysis, detection_results)
     _cache_result(cache_key, response)
 
-    # ------------------------------------------------------------------
-    # Step 8 — Create alert if critical
-    # ------------------------------------------------------------------
+    # alert if critical
     if analysis.threat_level in ("high", "critical"):
         _create_alert(db, package_row, analysis)
 
@@ -163,12 +113,7 @@ async def analyze_package(
     return response
 
 
-# ======================================================================
-# Internal helpers
-# ======================================================================
-
 async def _fetch_metadata(name: str, version: str, registry: str) -> dict[str, Any]:
-    """Fetch package metadata from registry. Returns {} on failure."""
     try:
         from app.services.registry_monitor import fetch_package_metadata
         return await fetch_package_metadata(name, version, registry)
@@ -178,7 +123,6 @@ async def _fetch_metadata(name: str, version: str, registry: str) -> dict[str, A
 
 
 def _extract_maintainer(metadata: dict[str, Any]) -> dict[str, Any]:
-    """Pull maintainer info out of the registry payload."""
     maintainer = metadata.get("maintainer", {})
     if not maintainer:
         # npm-style "author" field
@@ -198,7 +142,6 @@ def _extract_maintainer(metadata: dict[str, Any]) -> dict[str, Any]:
 
 
 def _extract_dependencies(metadata: dict[str, Any]) -> list[dict[str, Any]]:
-    """Turn the metadata 'dependencies' map into a list of dicts."""
     deps = metadata.get("dependencies", {})
     if isinstance(deps, dict):
         return [
@@ -217,9 +160,8 @@ def _persist_to_db(
     analysis: AnalysisResult,
     detection_results: dict[str, DetectionResult],
 ) -> tuple:
-    """Save Package + Analysis rows to PostgreSQL."""
     try:
-        # Upsert package
+        # upsert package
         pkg = (
             db.query(orm.Package)
             .filter_by(name=name, version=version)
@@ -278,7 +220,6 @@ def _persist_to_neo4j(
     is_malicious: bool,
     dependencies: list[dict[str, Any]],
 ) -> None:
-    """Best-effort save to Neo4j — doesn't crash the pipeline."""
     try:
         from app.db.neo4j_client import neo4j_client
 
@@ -295,7 +236,6 @@ def _persist_to_neo4j(
 
 
 def _get_cached_result(key: str) -> Optional[dict[str, Any]]:
-    """Try Redis cache; return None on miss or error."""
     try:
         from app.db.redis_client import redis_client
         return redis_client.get_json(key)
@@ -304,7 +244,6 @@ def _get_cached_result(key: str) -> Optional[dict[str, Any]]:
 
 
 def _cache_result(key: str, data: dict[str, Any]) -> None:
-    """Store in Redis with 1-hour TTL."""
     try:
         from app.db.redis_client import redis_client
         redis_client.set_json(key, data, ttl=3600)
@@ -313,7 +252,6 @@ def _cache_result(key: str, data: dict[str, Any]) -> None:
 
 
 def _create_alert(db: Session, package: orm.Package, analysis: AnalysisResult) -> None:
-    """Generate a new alert for high/critical threats."""
     try:
         alert = orm.Alert(
             package_id=package.id,
@@ -337,7 +275,6 @@ def _build_response(
     analysis: AnalysisResult,
     detection_results: dict[str, DetectionResult],
 ) -> dict[str, Any]:
-    """Shape the final API response dict."""
     return {
         "package": {
             "id": package.id,

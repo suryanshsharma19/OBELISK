@@ -1,11 +1,4 @@
-"""Celery Beat schedule configuration.
-
-Defines periodic tasks (cron-style) that run on a timer.
-Used for continuous registry monitoring and database cleanup.
-
-Usage:
-    celery -A app.workers.celery_app beat --loglevel=info
-"""
+"""Celery Beat schedule configuration."""
 
 from celery.schedules import crontab
 

@@ -1,11 +1,5 @@
-/**
- * Formatting utilities for dates, numbers, and display strings.
- */
+// Formatting utilities for dates, numbers, and display strings
 
-/**
- * Format an ISO timestamp to a human-friendly relative string.
- * e.g. "2 hours ago", "just now"
- */
 export function timeAgo(isoString) {
   if (!isoString) return '—';
   const date = new Date(isoString);
@@ -18,25 +12,16 @@ export function timeAgo(isoString) {
   return date.toLocaleDateString();
 }
 
-/**
- * Format an ISO timestamp to a local date-time string.
- */
 export function formatDateTime(isoString) {
   if (!isoString) return '—';
   return new Date(isoString).toLocaleString();
 }
 
-/**
- * Format a risk score (0-100) to a fixed string like "42.5".
- */
 export function formatRiskScore(score) {
   if (score == null) return '—';
   return Number(score).toFixed(1);
 }
 
-/**
- * Format a large number with K/M suffixes.
- */
 export function formatCount(n) {
   if (n == null) return '0';
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -44,16 +29,10 @@ export function formatCount(n) {
   return String(n);
 }
 
-/**
- * Capitalise the first letter of a string.
- */
 export function capitalise(str = '') {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-/**
- * Map a threat level to a human-readable label.
- */
 export function threatLabel(level) {
   const labels = {
     safe: 'Safe',

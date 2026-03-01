@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""
-Populate the popular packages list used by the typosquatting detector.
-
-Fetches the top-downloaded packages from npm and PyPI, then writes
-them to a JSON file that the detector can load at startup.
-
-Usage:
-    python -m scripts.populate_popular_packages
-"""
+"""Populate the popular packages list for the typosquatting detector."""
 
 import json
 import sys
@@ -31,7 +23,6 @@ PYPI_TOP_URL = "https://hugovk.github.io/top-pypi-packages/top-pypi-packages-30-
 
 
 async def fetch_npm_popular() -> list[str]:
-    """Grab package names from the npm search API."""
     packages = []
     try:
         async with httpx.AsyncClient(timeout=30) as client:
@@ -49,7 +40,6 @@ async def fetch_npm_popular() -> list[str]:
 
 
 async def fetch_pypi_popular() -> list[str]:
-    """Grab the top PyPI package names."""
     packages = []
     try:
         async with httpx.AsyncClient(timeout=30) as client:

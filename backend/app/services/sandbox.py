@@ -1,15 +1,4 @@
-"""Sandbox Service — isolated package execution for behavioural analysis.
-
-In production this spins up a Docker container with:
-  --network=none --memory=512m --cpus=0.5
-installs the package, imports it, and monitors syscalls.
-
-For local dev / CI we provide a *simulation mode* that skips Docker
-and returns heuristic-based results instead.
-
-Functions:
-    run_in_sandbox:  Execute a package and return behavioural signals
-"""
+"""Sandbox service - isolated package execution for behavioural analysis."""
 
 from __future__ import annotations
 
@@ -28,14 +17,7 @@ async def run_in_sandbox(
     version: str,
     registry: str = "npm",
 ) -> dict[str, Any]:
-    """
-    Run a package in an isolated environment and collect behavioural data.
-
-    Returns:
-        Dict with keys: network_attempts, file_writes, cpu_usage,
-        memory_usage, process_spawns, exit_code, execution_time.
-    """
-    # For now we run in simulation mode (no Docker dependency)
+    # simulation mode for now (no Docker dependency)
     logger.info(
         "Sandbox (sim): %s@%s registry=%s",
         package_name, version, registry,
@@ -48,11 +30,7 @@ async def _simulate_sandbox(
     version: str,
     registry: str,
 ) -> dict[str, Any]:
-    """
-    Lightweight simulation when Docker isn't available.
-    Returns neutral / safe defaults.
-    """
-    # Simulate some processing time
+    # simulate some processing time
     await asyncio.sleep(0.05)
 
     return {
@@ -73,10 +51,7 @@ async def _docker_sandbox(
     version: str,
     registry: str,
 ) -> dict[str, Any]:
-    """
-    Real Docker-based sandbox execution.
-    TODO: enable once Docker-in-Docker is configured.
-    """
+    # real Docker sandbox - enable once Docker-in-Docker is set up
     image = "node:18-alpine" if registry == "npm" else "python:3.11-alpine"
     install_cmd = (
         f"npm install {package_name}@{version}"

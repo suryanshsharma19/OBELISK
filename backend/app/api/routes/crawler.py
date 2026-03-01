@@ -1,11 +1,4 @@
-"""
-Crawler control routes — start/stop/status for the registry monitor.
-
-Endpoints:
-    POST /api/crawler/start   — Begin monitoring registries
-    POST /api/crawler/stop    — Stop the monitor
-    GET  /api/crawler/status  — Check if the crawler is running
-"""
+"""Crawler control routes - start/stop/status for the registry monitor."""
 
 import asyncio
 from datetime import datetime, timezone
@@ -19,7 +12,7 @@ logger = setup_logger(__name__)
 
 router = APIRouter()
 
-# Simple in-memory state for the crawler (single-process only)
+# in-memory crawler state
 _crawler_state: dict[str, Any] = {
     "running": False,
     "task": None,
@@ -29,13 +22,8 @@ _crawler_state: dict[str, Any] = {
 }
 
 
-# ------------------------------------------------------------------
-# POST /api/crawler/start
-# ------------------------------------------------------------------
-
 @router.post("/start")
 async def start_crawler():
-    """Kick off the background registry-monitoring task."""
     if _crawler_state["running"]:
         return {"status": "already_running", "message": "Crawler is already active"}
 
@@ -50,13 +38,8 @@ async def start_crawler():
     return {"status": "started", "message": "Registry crawler started successfully"}
 
 
-# ------------------------------------------------------------------
-# POST /api/crawler/stop
-# ------------------------------------------------------------------
-
 @router.post("/stop")
 async def stop_crawler():
-    """Stop the background crawler."""
     if not _crawler_state["running"]:
         return {"status": "not_running", "message": "Crawler is not active"}
 
@@ -65,13 +48,8 @@ async def stop_crawler():
     return {"status": "stopped", "message": "Registry crawler stopped successfully"}
 
 
-# ------------------------------------------------------------------
-# GET /api/crawler/status
-# ------------------------------------------------------------------
-
 @router.get("/status")
 async def crawler_status():
-    """Return the current state of the registry crawler."""
     return {
         "running": _crawler_state["running"],
         "last_check": _crawler_state["last_check"],

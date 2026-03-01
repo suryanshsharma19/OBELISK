@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""
-Health check script — verifies all services are reachable.
-
-Checks PostgreSQL, Redis, Neo4j, and the FastAPI backend.  Returns
-exit code 0 if all pass, 1 if any fail.
-
-Usage:
-    python -m scripts.health_check
-"""
+"""Health check script - verifies all services are reachable."""
 
 import sys
 from pathlib import Path
@@ -24,7 +16,6 @@ settings = get_settings()
 
 
 def check_postgres() -> bool:
-    """Try opening a SQLAlchemy connection."""
     try:
         from sqlalchemy import create_engine, text
         engine = create_engine(settings.postgres_url)
@@ -38,7 +29,6 @@ def check_postgres() -> bool:
 
 
 def check_redis() -> bool:
-    """Ping the Redis server."""
     try:
         import redis as redis_lib
         r = redis_lib.Redis(host=settings.redis_host, port=settings.redis_port, socket_timeout=3)
@@ -51,7 +41,6 @@ def check_redis() -> bool:
 
 
 def check_neo4j() -> bool:
-    """Verify Neo4j connectivity."""
     try:
         from neo4j import GraphDatabase
         driver = GraphDatabase.driver(
@@ -68,7 +57,6 @@ def check_neo4j() -> bool:
 
 
 def check_backend() -> bool:
-    """Hit the /health endpoint on the FastAPI backend."""
     url = f"http://{settings.api_host}:{settings.api_port}/health"
     try:
         resp = httpx.get(url, timeout=5)

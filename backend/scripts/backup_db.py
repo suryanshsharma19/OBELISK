@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""
-Database backup utility.
-
-Dumps the PostgreSQL database to a timestamped SQL file using pg_dump.
-Keeps the last 7 backups and deletes older ones.
-
-Usage:
-    python -m scripts.backup_db
-"""
+"""Database backup utility using pg_dump."""
 
 import subprocess
 import sys
@@ -27,7 +19,6 @@ MAX_BACKUPS = 7
 
 
 def run_backup() -> Path:
-    """Execute pg_dump and return the path to the backup file."""
     BACKUP_DIR.mkdir(parents=True, exist_ok=True)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -57,7 +48,6 @@ def run_backup() -> Path:
 
 
 def cleanup_old_backups() -> None:
-    """Remove backups beyond MAX_BACKUPS, keeping the most recent."""
     backups = sorted(BACKUP_DIR.glob("obelisk_*.sql"), reverse=True)
     for old in backups[MAX_BACKUPS:]:
         old.unlink()

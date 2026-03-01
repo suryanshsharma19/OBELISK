@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
-"""
-Seed the database with sample packages and analysis records.
-
-Useful for local development and demo purposes.  Run after init_db.
-
-Usage:
-    python -m scripts.seed_data
-"""
+"""Seed the database with sample packages for dev/demo."""
 
 import sys
 from datetime import datetime, timezone
@@ -86,7 +79,6 @@ SEED_PACKAGES = [
 
 
 def seed() -> None:
-    """Insert seed data into the database."""
     db = SessionLocal()
     try:
         # Check if data already exists

@@ -1,12 +1,4 @@
-"""
-Alert management routes.
-
-Endpoints:
-    GET  /api/alerts/        — Paginated alert listing
-    GET  /api/alerts/{id}    — Single alert detail
-    PUT  /api/alerts/{id}    — Update alert (read, resolve, etc.)
-    POST /api/alerts/bulk    — Bulk action on multiple alerts
-"""
+"""Alert management routes."""
 
 from typing import Optional
 
@@ -23,10 +15,6 @@ logger = setup_logger(__name__)
 router = APIRouter()
 
 
-# ------------------------------------------------------------------
-# GET /api/alerts/
-# ------------------------------------------------------------------
-
 @router.get("/")
 async def list_alerts(
     skip: int = Query(0, ge=0),
@@ -35,7 +23,7 @@ async def list_alerts(
     is_resolved: Optional[bool] = Query(None),
     db: Session = Depends(get_db),
 ):
-    """Return a paginated list of alerts with optional filters."""
+    """Return a paginated list of alerts."""
     alerts, total = alert_service.get_alerts(
         db,
         skip=skip,
@@ -54,13 +42,8 @@ async def list_alerts(
     }
 
 
-# ------------------------------------------------------------------
-# GET /api/alerts/{alert_id}
-# ------------------------------------------------------------------
-
 @router.get("/{alert_id}")
 async def get_alert(alert_id: int, db: Session = Depends(get_db)):
-    """Retrieve a single alert with its full details."""
     alert = alert_service.get_alert_by_id(db, alert_id)
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
@@ -80,10 +63,6 @@ async def get_alert(alert_id: int, db: Session = Depends(get_db)):
     }
 
 
-# ------------------------------------------------------------------
-# PUT /api/alerts/{alert_id}
-# ------------------------------------------------------------------
-
 @router.put("/{alert_id}")
 async def update_alert(
     alert_id: int,
@@ -93,7 +72,6 @@ async def update_alert(
     blocked_in_ci: Optional[bool] = None,
     db: Session = Depends(get_db),
 ):
-    """Partially update an alert (mark as read, resolved, etc.)."""
     alert = alert_service.update_alert(
         db, alert_id,
         is_read=is_read,
@@ -107,17 +85,12 @@ async def update_alert(
     return {"message": "Alert updated", "alert_id": alert_id}
 
 
-# ------------------------------------------------------------------
-# POST /api/alerts/bulk
-# ------------------------------------------------------------------
-
 @router.post("/bulk")
 async def bulk_alert_action(
     alert_ids: list[int],
-    action: str = Query(..., regex="^(mark_read|resolve|report)$"),
+    action: str = Query(..., pattern="^(mark_read|resolve|report)$"),
     db: Session = Depends(get_db),
 ):
-    """Perform a batch action on multiple alerts at once."""
     if not alert_ids:
         raise HTTPException(status_code=400, detail="No alert IDs provided")
 

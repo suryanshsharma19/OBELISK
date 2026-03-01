@@ -1,12 +1,4 @@
-/**
- * React hook that wraps the WebSocket singleton.
- *
- * Connects on mount, disconnects on unmount, and provides
- * a `lastMessage` state for easy consumption.
- *
- * Usage:
- *   const { lastMessage, connected } = useWebSocket();
- */
+// Hook wrapper around the WebSocket singleton
 
 import { useState, useEffect, useRef } from 'react';
 import wsClient from '../services/websocket';

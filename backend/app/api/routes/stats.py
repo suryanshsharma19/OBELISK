@@ -1,10 +1,4 @@
-"""
-Statistics routes — dashboard data endpoints.
-
-Endpoints:
-    GET /api/stats/overview  — Summary stats for the dashboard
-    GET /api/stats/trend     — Threat detection trend over time
-"""
+"""Statistics routes - dashboard data endpoints."""
 
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional
@@ -22,17 +16,8 @@ logger = setup_logger(__name__)
 router = APIRouter()
 
 
-# ------------------------------------------------------------------
-# GET /api/stats/overview
-# ------------------------------------------------------------------
-
 @router.get("/overview")
 async def stats_overview(db: Session = Depends(get_db)):
-    """
-    return high-level dashboard statistics:
-    total packages, malicious count, active alerts, 24h scans,
-    threat distribution, and detection rate.
-    """
     total_packages = db.query(func.count(Package.id)).scalar() or 0
     malicious_packages = (
         db.query(func.count(Package.id))
@@ -80,19 +65,11 @@ async def stats_overview(db: Session = Depends(get_db)):
     }
 
 
-# ------------------------------------------------------------------
-# GET /api/stats/trend
-# ------------------------------------------------------------------
-
 @router.get("/trend")
 async def stats_trend(
     days: int = Query(7, ge=1, le=90),
     db: Session = Depends(get_db),
 ):
-    """
-    Return per-day scan and threat counts for the last *days* days.
-    Used by the ThreatChart component on the frontend.
-    """
     trend = []
     today = date.today()
 

@@ -1,11 +1,4 @@
-"""Celery application instance.
-
-Configures the Celery broker (Redis) and result backend.
-Workers import this module to get the app instance.
-
-Usage:
-    celery -A app.workers.celery_app worker --loglevel=info
-"""
+"""Celery application instance."""
 
 from celery import Celery
 
@@ -26,9 +19,9 @@ celery_app.conf.update(
     timezone="UTC",
     enable_utc=True,
     task_track_started=True,
-    task_time_limit=600,           # 10 minutes hard limit
-    task_soft_time_limit=540,      # 9 minutes soft limit
-    worker_prefetch_multiplier=1,  # fair scheduling
+    task_time_limit=600,
+    task_soft_time_limit=540,
+    worker_prefetch_multiplier=1,
 )
 
 # Auto-discover tasks in the workers module

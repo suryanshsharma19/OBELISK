@@ -1,15 +1,4 @@
-"""
-Neo4j driver wrapper for dependency-graph operations.
-
-Provides a connection pool, session helpers, and common Cypher queries
-used across the graph_service and gnn_analyzer modules.
-
-Usage:
-    client = Neo4jClient()
-    client.connect()
-    result = client.run_query("MATCH (n) RETURN n LIMIT 5")
-    client.close()
-"""
+"""Neo4j driver wrapper for dependency-graph operations."""
 
 from __future__ import annotations
 
@@ -39,12 +28,7 @@ class Neo4jClient:
         self._password = password or settings.neo4j_password
         self._driver = None
 
-    # ------------------------------------------------------------------
-    # Connection lifecycle
-    # ------------------------------------------------------------------
-
     def connect(self) -> None:
-        """Open the driver connection pool."""
         if self._driver is not None:
             return
         try:
@@ -63,7 +47,6 @@ class Neo4jClient:
             ) from exc
 
     def close(self) -> None:
-        """Shut down the driver gracefully."""
         if self._driver:
             self._driver.close()
             self._driver = None
@@ -76,19 +59,13 @@ class Neo4jClient:
         return self._driver
 
     def get_session(self) -> Neo4jSession:
-        """Return a new Neo4j session (caller must close it)."""
         return self.driver.session()
-
-    # ------------------------------------------------------------------
-    # Query helpers
-    # ------------------------------------------------------------------
 
     def run_query(
         self,
         query: str,
         parameters: Optional[dict[str, Any]] = None,
     ) -> list[dict[str, Any]]:
-        """Execute a Cypher query and return a list of record dicts."""
         try:
             with self.get_session() as session:
                 result = session.run(query, parameters or {})
@@ -100,10 +77,6 @@ class Neo4jClient:
                 details={"query": query[:200], "error": str(exc)},
             ) from exc
 
-    # ------------------------------------------------------------------
-    # Package-graph operations
-    # ------------------------------------------------------------------
-
     def create_package_node(
         self,
         name: str,
@@ -112,7 +85,6 @@ class Neo4jClient:
         risk_score: float = 0.0,
         is_malicious: bool = False,
     ) -> dict[str, Any]:
-        """Create (or merge) a Package node and return its properties."""
         query = """
         MERGE (p:Package {name: $name, version: $version, registry: $registry})
         ON CREATE SET
@@ -141,7 +113,6 @@ class Neo4jClient:
         dep_version: str,
         dep_type: str = "production",
     ) -> None:
-        """Link parent → dependency with a DEPENDS_ON relationship."""
         query = """
         MATCH (parent:Package {name: $parent_name, version: $parent_version})
         MERGE (dep:Package {name: $dep_name, version: $dep_version})
@@ -159,9 +130,9 @@ class Neo4jClient:
     def get_dependencies(
         self, name: str, max_depth: int = 5,
     ) -> list[dict[str, Any]]:
-        """Traverse the dependency chain up to *max_depth* hops."""
-        query = """
-        MATCH path = (p:Package {name: $name})-[:DEPENDS_ON*1..$max_depth]->(dep)
+        # Neo4j doesn't support params in variable-length patterns, so we interpolate the int directly
+        query = f"""
+        MATCH path = (p:Package {{name: $name}})-[:DEPENDS_ON*1..{int(max_depth)}]->(dep)
         RETURN dep.name        AS name,
                dep.version     AS version,
                dep.risk_score  AS risk_score,
@@ -169,10 +140,9 @@ class Neo4jClient:
                length(path)    AS depth
         ORDER BY dep.risk_score DESC
         """
-        return self.run_query(query, {"name": name, "max_depth": max_depth})
+        return self.run_query(query, {"name": name})
 
     def find_malicious_in_chain(self, name: str) -> list[dict[str, Any]]:
-        """Return any malicious packages reachable from *name*."""
         query = """
         MATCH path = (p:Package {name: $name})-[:DEPENDS_ON*1..5]->(dep)
         WHERE dep.is_malicious = true
@@ -184,5 +154,4 @@ class Neo4jClient:
         return self.run_query(query, {"name": name})
 
 
-# Module-level singleton (lazy-connected)
 neo4j_client = Neo4jClient()

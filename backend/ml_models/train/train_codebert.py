@@ -1,21 +1,5 @@
 #!/usr/bin/env python3
-"""
-Fine-tune CodeBERT for malicious code classification.
-
-Takes a labelled dataset of (code_snippet, is_malicious) pairs and
-fine-tunes the microsoft/codebert-base model for binary sequence
-classification.
-
-Dataset format (CSV):
-    code,label
-    "const exec = require('child_process')...",1
-    "function add(a, b) { return a + b; }",0
-
-Usage:
-    python train_codebert.py --dataset ../datasets/code_samples.csv \\
-                             --output  ../saved_models/codebert \\
-                             --epochs  3
-"""
+"""Fine-tune CodeBERT for malicious code classification."""
 
 import argparse
 import csv
@@ -31,7 +15,6 @@ from transformers import (
 
 
 class CodeDataset(Dataset):
-    """Simple dataset that tokenises code strings on the fly."""
 
     def __init__(self, samples: list[tuple[str, int]], tokenizer, max_len: int = 512):
         self.samples = samples
@@ -58,7 +41,6 @@ class CodeDataset(Dataset):
 
 
 def load_dataset(path: str) -> list[tuple[str, int]]:
-    """Read a CSV with columns (code, label)."""
     samples = []
     with open(path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)

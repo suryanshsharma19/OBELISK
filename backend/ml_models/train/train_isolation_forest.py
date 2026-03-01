@@ -1,19 +1,5 @@
 #!/usr/bin/env python3
-"""
-Train an Isolation Forest for maintainer anomaly detection.
-
-Fits an unsupervised Isolation Forest on numeric features derived from
-maintainer profiles (account age, package count, download history, etc.).
-
-Dataset format (CSV):
-    account_age_days,total_packages,github_repos,previous_downloads,has_verified_email
-    365,12,5,150000,1
-    2,1,0,0,0
-
-Usage:
-    python train_isolation_forest.py --dataset ../datasets/maintainers.csv \\
-                                     --output  ../saved_models/isolation_forest
-"""
+"""Train an Isolation Forest for maintainer anomaly detection."""
 
 import argparse
 from pathlib import Path
@@ -22,7 +8,6 @@ import numpy as np
 
 
 def load_data(path: str) -> np.ndarray:
-    """Load the CSV and return a numpy array of features."""
     import csv
     rows = []
     with open(path, newline="", encoding="utf-8") as f:

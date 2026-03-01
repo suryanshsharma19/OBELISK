@@ -1,17 +1,4 @@
-"""
-Registry Monitor — fetches package metadata from npm and PyPI.
-
-Talks to the public registries via their JSON APIs and normalises
-the response into a common dict shape used by the analysis pipeline.
-
-Functions:
-    fetch_package_metadata: Fetch + normalise metadata for a package
-    fetch_npm_metadata:     npm-specific logic
-    fetch_pypi_metadata:    PyPI-specific logic
-
-Usage:
-    meta = await fetch_package_metadata("express", "4.18.0", "npm")
-"""
+"""Fetches and normalises package metadata from npm and PyPI."""
 
 from __future__ import annotations
 
@@ -26,7 +13,7 @@ from app.core.logging import setup_logger
 logger = setup_logger(__name__)
 settings = get_settings()
 
-# Timeout for outgoing HTTP requests (seconds)
+# http timeout (seconds)
 REQUEST_TIMEOUT = 15.0
 
 
@@ -35,13 +22,6 @@ async def fetch_package_metadata(
     version: str,
     registry: str,
 ) -> dict[str, Any]:
-    """
-    Fetch package metadata from the appropriate registry.
-
-    Returns a normalised dict with keys:
-        name, version, description, author, license,
-        repository, dependencies, scripts, maintainer, ...
-    """
     if registry == "npm":
         return await fetch_npm_metadata(name, version)
     elif registry == "pypi":
@@ -50,24 +30,14 @@ async def fetch_package_metadata(
         raise RegistryError(f"Unsupported registry: {registry}")
 
 
-# ======================================================================
-# npm
-# ======================================================================
-
 async def fetch_npm_metadata(name: str, version: str) -> dict[str, Any]:
-    """
-    Hit the npm registry API.
-
-    Endpoint: https://registry.npmjs.org/{package}/{version}
-    Fallback: https://registry.npmjs.org/{package} (latest)
-    """
     base = settings.npm_registry_url.rstrip("/")
 
-    # Try version-specific first
+    # try version-specific first
     url = f"{base}/{name}/{version}"
     data = await _http_get(url)
 
-    # Fallback to package root if version didn't resolve
+    # fallback to package root
     if data is None:
         url = f"{base}/{name}"
         data = await _http_get(url)
@@ -85,7 +55,6 @@ async def fetch_npm_metadata(name: str, version: str) -> dict[str, Any]:
 
 
 def _normalise_npm(raw: dict[str, Any], name: str, version: str) -> dict[str, Any]:
-    """Extract the fields we care about from npm's JSON."""
     return {
         "name": raw.get("name", name),
         "version": raw.get("version", version),
@@ -104,17 +73,7 @@ def _normalise_npm(raw: dict[str, Any], name: str, version: str) -> dict[str, An
     }
 
 
-# ======================================================================
-# PyPI
-# ======================================================================
-
 async def fetch_pypi_metadata(name: str, version: str) -> dict[str, Any]:
-    """
-    Hit the PyPI JSON API.
-
-    Endpoint: https://pypi.org/pypi/{package}/{version}/json
-    Fallback: https://pypi.org/pypi/{package}/json
-    """
     base = settings.pypi_registry_url.rstrip("/")
 
     url = f"{base}/{name}/{version}/json"
@@ -131,7 +90,6 @@ async def fetch_pypi_metadata(name: str, version: str) -> dict[str, Any]:
 
 
 def _normalise_pypi(raw: dict[str, Any], name: str, version: str) -> dict[str, Any]:
-    """Extract the fields we care about from PyPI's JSON."""
     info = raw.get("info", {})
     return {
         "name": info.get("name", name),
@@ -150,12 +108,7 @@ def _normalise_pypi(raw: dict[str, Any], name: str, version: str) -> dict[str, A
     }
 
 
-# ======================================================================
-# Shared helpers
-# ======================================================================
-
 async def _http_get(url: str) -> dict[str, Any] | None:
-    """Fire a GET request, return parsed JSON or None."""
     try:
         async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
             resp = await client.get(url)
@@ -172,7 +125,6 @@ async def _http_get(url: str) -> dict[str, Any] | None:
 
 
 def _first_maintainer(maintainers: list[dict[str, Any]]) -> dict[str, Any]:
-    """Return the first maintainer dict, or an empty dict."""
     if maintainers and isinstance(maintainers[0], dict):
         return maintainers[0]
     return {}

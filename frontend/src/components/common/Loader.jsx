@@ -1,11 +1,4 @@
-/**
- * Reusable loading spinner with optional label.
- *
- * Usage:
- *   <Loader />            — default spinner
- *   <Loader text="Analyzing…" />  — with custom text
- *   <Loader fullPage />           — centred on the viewport
- */
+// Reusable loading spinner
 
 import React from 'react';
 

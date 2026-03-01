@@ -1,9 +1,4 @@
-/**
- * WebSocket client for real-time alerts and crawler updates.
- *
- * Provides automatic reconnection with exponential back-off,
- * message callbacks, and graceful shutdown.
- */
+// WebSocket client with auto-reconnect
 
 import { WS_BASE_URL } from '../utils/constants';
 
@@ -19,11 +14,7 @@ class WebSocketClient {
     this._shouldReconnect = true;
   }
 
-  /* ── Public API ────────────────────────────────────────────── */
 
-  /**
-   * Open the connection and start listening.
-   */
   connect() {
     if (this._ws?.readyState === WebSocket.OPEN) return;
 
@@ -53,27 +44,18 @@ class WebSocketClient {
     }
   }
 
-  /**
-   * Close the connection and stop reconnecting.
-   */
   disconnect() {
     this._shouldReconnect = false;
     this._ws?.close();
     this._ws = null;
   }
 
-  /**
-   * Send a JSON message.
-   */
   send(data) {
     if (this._ws?.readyState !== WebSocket.OPEN) return;
     this._ws.send(JSON.stringify(data));
   }
 
-  /**
-   * Register a callback for an event type.
-   * Returns an unsubscribe function.
-   */
+  // returns unsubscribe function
   on(event, callback) {
     if (!this._listeners.has(event)) {
       this._listeners.set(event, new Set());
@@ -82,7 +64,6 @@ class WebSocketClient {
     return () => this._listeners.get(event)?.delete(callback);
   }
 
-  /* ── Internals ─────────────────────────────────────────────── */
 
   _emit(event, data) {
     this._listeners.get(event)?.forEach((cb) => cb(data));
@@ -97,6 +78,5 @@ class WebSocketClient {
   }
 }
 
-// Singleton instance
 const wsClient = new WebSocketClient();
 export default wsClient;

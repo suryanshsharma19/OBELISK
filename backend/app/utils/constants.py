@@ -7,11 +7,11 @@ from typing import Final
 
 
 class ThreatLevel(str, Enum):
-    SAFE = "SAFE"          # 0–20
-    LOW = "LOW"            # 20–40
-    MEDIUM = "MEDIUM"      # 40–60
-    HIGH = "HIGH"          # 60–80
-    CRITICAL = "CRITICAL"  # 80–100
+    SAFE = "safe"          # 0–20
+    LOW = "low"            # 20–40
+    MEDIUM = "medium"      # 40–60
+    HIGH = "high"          # 60–80
+    CRITICAL = "critical"  # 80–100
 
 
 THREAT_LEVEL_RANGES: Final[dict[ThreatLevel, tuple[int, int]]] = {

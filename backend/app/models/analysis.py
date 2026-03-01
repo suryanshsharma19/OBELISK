@@ -1,8 +1,4 @@
-"""Pydantic models for analysis data.
-
-Used for internal data passing between services.
-Don't confuse these with the SQLAlchemy ORM models in db/models.py.
-"""
+"""Pydantic models for analysis data (not SQLAlchemy ORM models)."""
 
 from datetime import datetime
 from typing import Any, Optional

@@ -1,9 +1,4 @@
-/**
- * Persist state in localStorage and keep it in sync across tabs.
- *
- * Usage:
- *   const [value, setValue] = useLocalStorage('key', defaultValue);
- */
+// Persist state in localStorage, syncs across tabs
 
 import { useState, useCallback, useEffect } from 'react';
 

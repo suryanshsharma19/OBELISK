@@ -1,9 +1,4 @@
-/**
- * Redux store configuration.
- *
- * Combines all feature slices and applies middleware.
- * Exported as the single store instance used by <Provider>.
- */
+// Redux store configuration
 
 import { configureStore } from '@reduxjs/toolkit';
 import packagesReducer from './slices/packagesSlice';

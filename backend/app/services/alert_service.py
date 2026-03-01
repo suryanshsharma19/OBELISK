@@ -1,13 +1,4 @@
-"""Alert Service — CRUD and business logic for security alerts.
-
-Functions:
-    create_alert:     insert a new threat alert
-    get_alerts:       paginated + filtered query
-    get_alert_by_id:  single alert with package context
-    update_alert:     mark read / resolved
-    bulk_action:      batch update multiple alerts
-    get_unread_count: dashboard badge number
-"""
+"""Alert service - CRUD and business logic for security alerts."""
 
 from __future__ import annotations
 
@@ -30,7 +21,6 @@ def create_alert(
     description: str,
     threat_level: str,
 ) -> Alert:
-    """Persist a new alert and return the ORM row."""
     alert = Alert(
         package_id=package_id,
         title=title,
@@ -51,7 +41,6 @@ def get_alerts(
     threat_level: Optional[str] = None,
     is_resolved: Optional[bool] = None,
 ) -> tuple[list[Alert], int]:
-    """Query alerts with optional filters; returns (rows, total)."""
     query = db.query(Alert)
 
     if threat_level:
@@ -82,7 +71,6 @@ def update_alert(
     registry_reported: Optional[bool] = None,
     blocked_in_ci: Optional[bool] = None,
 ) -> Optional[Alert]:
-    """Partial update on a single alert."""
     alert = get_alert_by_id(db, alert_id)
     if alert is None:
         return None
@@ -104,10 +92,7 @@ def update_alert(
 
 
 def bulk_action(db: Session, alert_ids: list[int], action: str) -> int:
-    """
-    Perform a batch action on multiple alerts.
-    Returns the number of rows affected.
-    """
+    """Batch update multiple alerts. Returns affected count."""
     query = db.query(Alert).filter(Alert.id.in_(alert_ids))
 
     if action == "mark_read":
@@ -129,7 +114,6 @@ def bulk_action(db: Session, alert_ids: list[int], action: str) -> int:
 
 
 def get_unread_count(db: Session) -> int:
-    """Fast count of unresolved, unread alerts."""
     return (
         db.query(func.count(Alert.id))
         .filter(Alert.is_read == False, Alert.is_resolved == False)

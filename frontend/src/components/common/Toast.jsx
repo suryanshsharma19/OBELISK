@@ -1,9 +1,4 @@
-/**
- * Toast notification component.
- *
- * Reads from the Redux `ui.toasts` array and renders each one
- * with an auto-dismiss timer.
- */
+// Toast notification component
 
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';

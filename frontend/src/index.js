@@ -1,9 +1,4 @@
-/**
- * Application entry point.
- *
- * Wraps <App /> with the Redux provider and React Router,
- * then mounts into the #root DOM node.
- */
+// App entry point
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';

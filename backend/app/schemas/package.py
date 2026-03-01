@@ -1,6 +1,6 @@
 """Request/response schemas for /packages endpoints."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, computed_field
@@ -35,7 +35,7 @@ class AnalyzeResponse(BaseModel):
         }
     )
     detection_details: dict[str, Any] = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class PackageListResponse(BaseModel):

@@ -1,11 +1,4 @@
-"""
-Package routes — analyse, list, and retrieve package details.
-
-Endpoints:
-    POST /api/packages/analyze   — Run full analysis on a package
-    GET  /api/packages/list      — Paginated package listing
-    GET  /api/packages/{id}      — Detailed info for a single package
-"""
+"""Package routes - analyse, list, and retrieve package details."""
 
 from typing import Optional
 
@@ -30,18 +23,8 @@ logger = setup_logger(__name__)
 router = APIRouter()
 
 
-# ------------------------------------------------------------------
-# POST /api/packages/analyze
-# ------------------------------------------------------------------
-
 @router.post("/analyze", response_model=None)
 async def analyze_package(request: AnalyzeRequest, db: Session = Depends(get_db)):
-    """
-    Analyse a package for supply-chain threats.
-
-    Runs all 5 ML detectors in parallel, computes a combined risk score,
-    and persists results to PostgreSQL / Neo4j / Redis.
-    """
     logger.info("Analyze request: %s@%s (%s)", request.name, request.version, request.registry)
 
     try:
@@ -58,10 +41,6 @@ async def analyze_package(request: AnalyzeRequest, db: Session = Depends(get_db)
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
-# ------------------------------------------------------------------
-# GET /api/packages/list
-# ------------------------------------------------------------------
-
 @router.get("/list", response_model=None)
 async def list_packages(
     skip: int = Query(0, ge=0),
@@ -71,12 +50,6 @@ async def list_packages(
     sort: str = Query("analyzed_at_desc"),
     db: Session = Depends(get_db),
 ):
-    """
-    Return a paginated list of previously analysed packages.
-
-    Supports filtering by threat_level and registry, plus sorting by
-    risk_score or analyzed_at.
-    """
     query = db.query(Package)
 
     # Apply filters
@@ -122,16 +95,8 @@ async def list_packages(
     }
 
 
-# ------------------------------------------------------------------
-# GET /api/packages/{package_id}
-# ------------------------------------------------------------------
-
 @router.get("/{package_id}", response_model=None)
 async def get_package_detail(package_id: int, db: Session = Depends(get_db)):
-    """
-    Retrieve full details for a specific package, including its most
-    recent analysis and any associated alerts.
-    """
     package = db.query(Package).filter(Package.id == package_id).first()
     if not package:
         raise HTTPException(status_code=404, detail="Package not found")

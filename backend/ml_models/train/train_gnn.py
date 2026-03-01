@@ -1,19 +1,5 @@
 #!/usr/bin/env python3
-"""
-Train a Graph Neural Network for dependency-graph classification.
-
-Uses PyTorch Geometric to build a simple GCN that predicts whether a
-package subgraph is malicious.
-
-Dataset:
-    A directory of JSON files, each describing a dependency graph:
-      { "root": "pkg-name", "nodes": [...], "edges": [...], "label": 0|1 }
-
-Usage:
-    python train_gnn.py --dataset ../datasets/graphs/ \\
-                        --output  ../saved_models/gnn \\
-                        --epochs  50
-"""
+"""Train a GNN for dependency-graph classification."""
 
 import argparse
 import json
@@ -25,12 +11,7 @@ from torch_geometric.data import Data, DataLoader
 from torch_geometric.nn import GCNConv, global_mean_pool
 
 
-# ---------------------------------------------------------------
-# Model definition
-# ---------------------------------------------------------------
-
 class PackageGCN(torch.nn.Module):
-    """Two-layer GCN with global mean pooling for graph classification."""
 
     def __init__(self, in_channels: int = 4, hidden: int = 64, out_channels: int = 2):
         super().__init__()
@@ -48,12 +29,7 @@ class PackageGCN(torch.nn.Module):
         return self.classifier(x)
 
 
-# ---------------------------------------------------------------
-# Data loading
-# ---------------------------------------------------------------
-
 def load_graph_data(dataset_dir: str) -> list[Data]:
-    """Read JSON graph files and convert to PyG Data objects."""
     data_list = []
     dataset_path = Path(dataset_dir)
 
@@ -90,10 +66,6 @@ def load_graph_data(dataset_dir: str) -> list[Data]:
     print(f"Loaded {len(data_list)} graphs from {dataset_dir}")
     return data_list
 
-
-# ---------------------------------------------------------------
-# Training
-# ---------------------------------------------------------------
 
 def train(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
