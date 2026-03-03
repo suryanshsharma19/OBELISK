@@ -23,9 +23,7 @@ An AI-powered software supply chain attack detection platform that combines deep
 - [System Architecture](#system-architecture)
 - [Tech Stack](#tech-stack)
 - [ML Detection Pipeline](#ml-detection-pipeline)
-- [Data Flow](#data-flow)
 - [Database Schema](#database-schema)
-- [Security Architecture](#security-architecture)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Quick Start (Docker)](#quick-start-docker)
@@ -34,7 +32,6 @@ An AI-powered software supply chain attack detection platform that combines deep
 - [API Reference](#api-reference)
 - [Project Structure](#project-structure)
 - [Deployment](#deployment)
-- [Monitoring & Observability](#monitoring--observability)
 - [Configuration](#configuration)
 - [Testing](#testing)
 - [Contributing](#contributing)
@@ -78,27 +75,11 @@ OBELISK follows a layered microservices architecture. Users interact through a R
 
 <br />
 
-<details>
-<summary><strong>🔍 Component Interaction Detail</strong></summary>
-<br />
-<div align="center">
-<img src="docs/diagrams/component-interaction.png" alt="Component Interaction Diagram" width="850" />
-<br /><em>Detailed component interaction — service boundaries, data persistence, and notification flows</em>
-</div>
-</details>
-
 The **Analysis Service** orchestrates the full pipeline: check cache → fetch registry metadata → run all 5 detectors concurrently via `asyncio.gather` → compute weighted risk score → persist results to PostgreSQL & Neo4j → cache in Redis → fire alerts if critical.
 
 ---
 
 ## Tech Stack
-
-<div align="center">
-<img src="docs/diagrams/tech-stack.png" alt="Comprehensive Tech Stack" width="850" />
-<br /><em>Full technology map — backend, frontend, ML/AI, databases, DevOps, and security</em>
-</div>
-
-<br />
 
 | Layer | Technologies |
 |-------|-------------|
@@ -144,24 +125,6 @@ Traverses the dependency graph in **Neo4j** up to 5 levels deep, identifying kno
 ### Risk Scoring
 The **RiskScorer** aggregates all detector outputs into a final weighted score (0–100), computes a **confidence metric** based on inter-detector agreement (threshold: 50), and classifies the threat level. Packages scoring ≥ 60 are flagged as **malicious**.
 
-<details>
-<summary><strong>📊 End-to-End Threat Detection Flow</strong></summary>
-<br />
-<div align="center">
-<img src="docs/diagrams/threat-detection-flow.png" alt="Threat Detection Flow" width="600" />
-<br /><em>Complete analysis flowchart — from package input through cache check, registry fetch, parallel detection, score aggregation, to risk classification and persistence</em>
-</div>
-</details>
-
----
-
-## Data Flow
-
-<div align="center">
-<img src="docs/diagrams/data-flow.png" alt="Data Flow Diagram" width="850" />
-<br /><em>End-to-end data flow — from user request through the React frontend, FastAPI backend, ML engine, databases, and alert dispatch</em>
-</div>
-
 ---
 
 ## Database Schema
@@ -186,17 +149,6 @@ OBELISK uses a multi-database architecture: **PostgreSQL** for relational storag
 
 ---
 
-## Security Architecture
-
-OBELISK implements defense-in-depth with seven security layers:
-
-<div align="center">
-<img src="docs/diagrams/security-layers.png" alt="Security Layers" width="400" />
-<br /><em>Seven-layer security model — network, authentication, authorization, input validation, application logic, data protection, and monitoring</em>
-</div>
-
----
-
 ## Getting Started
 
 ### Prerequisites
@@ -213,8 +165,8 @@ OBELISK implements defense-in-depth with seven security layers:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/obelisk.git
-cd obelisk
+git clone https://github.com/suryanshsharma19/OBELISK.git
+cd OBELISK
 
 # Copy environment files
 cp .env.example .env
@@ -436,15 +388,6 @@ terraform apply
 ```
 
 See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed deployment guides.
-
----
-
-## Monitoring & Observability
-
-<div align="center">
-<img src="docs/diagrams/monitoring-pipeline.png" alt="Monitoring Pipeline" width="700" />
-<br /><em>Observability stack — metrics collection from API, DB, ML models, and system health → Prometheus aggregation → Grafana dashboards + alert routing to Email, Slack, PagerDuty</em>
-</div>
 
 ---
 
