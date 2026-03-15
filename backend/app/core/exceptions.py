@@ -18,14 +18,25 @@ class ObeliskException(Exception):
         return self.message
 
 
-class ConfigurationError(ObeliskException): pass
+class ConfigurationError(ObeliskException):
+    """Raised when required runtime configuration is invalid or missing."""
 
-class DatabaseError(ObeliskException): pass
 
-class ModelLoadError(ObeliskException): pass
+class DatabaseError(ObeliskException):
+    """Raised when database access or persistence fails."""
 
-class RegistryError(ObeliskException): pass
 
-class AnalysisError(ObeliskException): pass
+class ModelLoadError(ObeliskException):
+    """Raised when an ML model cannot be loaded."""
 
-class ValidationError(ObeliskException): pass
+
+class RegistryError(ObeliskException):
+    """Raised when upstream package registry communication fails."""
+
+
+class AnalysisError(ObeliskException):
+    """Raised when the analysis pipeline fails to complete."""
+
+
+class ValidationError(ObeliskException):
+    """Raised when domain validation fails."""

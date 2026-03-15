@@ -1,1 +1,39 @@
-# TODO: configure
+project:
+  name: obelisk-ml-training
+  output_dir: ../saved_models
+  random_seed: 42
+
+datasets:
+  base_dir: ../datasets
+  codebert_train_file: codebert/train.jsonl
+  codebert_val_file: codebert/val.jsonl
+  gnn_graph_file: dependency_graphs/graphs.pt
+  anomaly_training_file: maintainers/maintainer_features.csv
+
+codebert:
+  model_name: microsoft/codebert-base
+  max_length: 512
+  learning_rate: 2.0e-5
+  batch_size: 8
+  epochs: 3
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+
+gnn:
+  hidden_dim: 128
+  num_layers: 3
+  dropout: 0.2
+  learning_rate: 1.0e-3
+  batch_size: 32
+  epochs: 50
+
+anomaly:
+  contamination: 0.02
+  n_estimators: 300
+  max_samples: auto
+  bootstrap: false
+
+tracking:
+  save_checkpoints: true
+  checkpoint_every_epoch: true
+  log_every_steps: 20

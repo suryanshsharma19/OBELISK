@@ -1,4 +1,46 @@
 groups:
-  - name: obelisk
-    rules: []
-    # TODO: add alert rules
+  - name: obelisk-platform
+    rules:
+      - alert: BackendDown
+        expr: up{job="obelisk-backend"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "OBELISK backend is down"
+          description: "Prometheus cannot scrape the backend for at least 2 minutes."
+
+      - alert: BackendHighErrorRate
+        expr: |
+          sum(rate(http_requests_total{job="obelisk-backend",status=~"5.."}[5m]))
+          /
+          clamp_min(sum(rate(http_requests_total{job="obelisk-backend"}[5m])), 1)
+          > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Backend 5xx error ratio is high"
+          description: "More than 5% of backend responses are 5xx for 10 minutes."
+
+      - alert: BackendHighLatencyP95
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="obelisk-backend"}[5m])) by (le)) > 1
+        for: 10m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Backend latency p95 above 1s"
+          description: "95th percentile backend latency has exceeded 1 second for 10 minutes."
+
+      - alert: BackendMemoryPressure
+        expr: process_resident_memory_bytes{job="obelisk-backend"} > 1.2e+09
+        for: 15m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Backend memory usage is high"
+          description: "Backend resident memory has stayed above 1.2GB for 15 minutes."

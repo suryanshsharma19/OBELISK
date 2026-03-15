@@ -1,1 +1,7 @@
-# TODO: configure
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: obelisk
+  labels:
+    app.kubernetes.io/name: obelisk
+    app.kubernetes.io/part-of: obelisk-platform

@@ -168,7 +168,7 @@ OBELISK uses a multi-database architecture: **PostgreSQL** for relational storag
 git clone https://github.com/suryanshsharma19/OBELISK.git
 cd OBELISK
 
-# Copy environment files
+# Copy environment filesa
 cp .env.example .env
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env

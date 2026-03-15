@@ -26,9 +26,9 @@ def test_full_package_lifecycle(client, db_session):
     # 1. Seed a package directly
     pkg = Package(
         name="lifecycle-pkg", version="1.0.0",
-        registry=RegistryType.npm,
+        registry=RegistryType.NPM,
         risk_score=42.0,
-        threat_level=ThreatLevel.medium,
+        threat_level=ThreatLevel.MEDIUM,
         is_malicious=False,
         analyzed_at=datetime.now(timezone.utc),
     )
@@ -52,9 +52,9 @@ def test_alert_lifecycle(client, db_session):
     """Create alert → list → read → resolve."""
     pkg = Package(
         name="alert-pkg", version="1.0.0",
-        registry=RegistryType.npm,
+        registry=RegistryType.NPM,
         risk_score=85.0,
-        threat_level=ThreatLevel.critical,
+        threat_level=ThreatLevel.CRITICAL,
         is_malicious=True,
         analyzed_at=datetime.now(timezone.utc),
     )
@@ -65,7 +65,7 @@ def test_alert_lifecycle(client, db_session):
         package_id=pkg.id,
         title="Malicious package detected",
         description="High risk score",
-        threat_level=ThreatLevel.critical,
+        threat_level=ThreatLevel.CRITICAL,
     )
     db_session.add(alert)
     db_session.commit()
@@ -95,4 +95,4 @@ def test_crawler_status(client):
     resp = client.get("/api/crawler/status")
     assert resp.status_code == 200
     data = resp.json()
-    assert "is_running" in data
+    assert "running" in data

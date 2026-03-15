@@ -56,7 +56,8 @@ def test_build_graph_strips_version_prefix(mock_client):
             is_malicious=False, dependencies=deps,
         )
     call_args = mock_client.create_dependency_edge.call_args
-    assert call_args.kwargs.get("dep_version", call_args[1].get("dep_version", call_args[0][3])) in ("5.0.0", "=5.0.0")
+    dep_version = call_args.kwargs.get("dep_version")
+    assert dep_version == "5.0.0"
 
 
 def test_build_graph_handles_client_error(mock_client):

@@ -8,7 +8,7 @@ so individual test files don't need to set up infrastructure.
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 
 from app.db.base import Base
 
@@ -25,6 +25,16 @@ def engine():
     Base.metadata.drop_all(bind=eng)
 
 
+@pytest.fixture(autouse=True)
+def _clean_tables(engine):
+    """Truncate all tables before each test for proper isolation."""
+    yield
+    with engine.connect() as conn:
+        for table in reversed(Base.metadata.sorted_tables):
+            conn.execute(table.delete())
+        conn.commit()
+
+
 @pytest.fixture
 def db_session(engine):
     """Provide a clean database session for each test function."""
@@ -38,8 +48,10 @@ def db_session(engine):
 
 
 @pytest.fixture
-def client(db_session):
+def client(db_session, engine):
     """Return a FastAPI TestClient with the test DB wired in."""
+    from unittest.mock import patch
+
     from app.api.dependencies import get_db
     from app.main import app
 
@@ -50,8 +62,12 @@ def client(db_session):
             pass
 
     app.dependency_overrides[get_db] = _override_get_db
-    with TestClient(app) as tc:
-        yield tc
+
+    # Patch the engine used in the lifespan so it doesn't try to connect
+    # to PostgreSQL; use the test SQLite engine instead.
+    with patch("app.db.session.engine", engine):
+        with TestClient(app) as tc:
+            yield tc
     app.dependency_overrides.clear()
 
 
