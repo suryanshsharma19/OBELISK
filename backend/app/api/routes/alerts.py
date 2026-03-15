@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import get_db
+from app.api.dependencies import enforce_rate_limit, get_current_user, get_db
 from app.core.logging import setup_logger
 from app.services import alert_service
 from app.utils.formatters import format_alert_summary
@@ -22,6 +22,7 @@ async def list_alerts(
     threat_level: Optional[str] = Query(None),
     is_resolved: Optional[bool] = Query(None),
     db: Session = Depends(get_db),
+    _: dict = Depends(get_current_user),
 ):
     """Return a paginated list of alerts."""
     alerts, total = alert_service.get_alerts(
@@ -43,7 +44,11 @@ async def list_alerts(
 
 
 @router.get("/{alert_id}")
-async def get_alert(alert_id: int, db: Session = Depends(get_db)):
+async def get_alert(
+    alert_id: int,
+    db: Session = Depends(get_db),
+    _: dict = Depends(get_current_user),
+):
     alert = alert_service.get_alert_by_id(db, alert_id)
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
@@ -71,6 +76,7 @@ async def update_alert(
     registry_reported: Optional[bool] = None,
     blocked_in_ci: Optional[bool] = None,
     db: Session = Depends(get_db),
+    _: dict = Depends(get_current_user),
 ):
     alert = alert_service.update_alert(
         db, alert_id,
@@ -90,6 +96,8 @@ async def bulk_alert_action(
     alert_ids: list[int],
     action: str = Query(..., pattern="^(mark_read|resolve|report)$"),
     db: Session = Depends(get_db),
+    _: dict = Depends(get_current_user),
+    __: None = Depends(enforce_rate_limit),
 ):
     if not alert_ids:
         raise HTTPException(status_code=400, detail="No alert IDs provided")

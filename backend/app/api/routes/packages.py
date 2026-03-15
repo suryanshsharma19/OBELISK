@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import get_db
+from app.api.dependencies import enforce_rate_limit, get_current_user, get_db
 from app.core.logging import setup_logger
 from app.db.models import Alert, Analysis, Package
 from app.schemas.package import (
@@ -24,7 +24,12 @@ router = APIRouter()
 
 
 @router.post("/analyze", response_model=None)
-async def analyze_package(request: AnalyzeRequest, db: Session = Depends(get_db)):
+async def analyze_package(
+    request: AnalyzeRequest,
+    db: Session = Depends(get_db),
+    _: dict = Depends(get_current_user),
+    __: None = Depends(enforce_rate_limit),
+):
     logger.info("Analyze request: %s@%s (%s)", request.name, request.version, request.registry)
 
     try:
@@ -38,7 +43,10 @@ async def analyze_package(request: AnalyzeRequest, db: Session = Depends(get_db)
         return result
     except Exception as exc:
         logger.error("Analysis failed: %s", exc)
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=500,
+            detail="Analysis failed due to an internal error",
+        ) from exc
 
 
 @router.get("/list", response_model=None)
@@ -49,6 +57,7 @@ async def list_packages(
     registry: Optional[str] = Query(None),
     sort: str = Query("analyzed_at_desc"),
     db: Session = Depends(get_db),
+    _: dict = Depends(get_current_user),
 ):
     query = db.query(Package)
 
@@ -96,7 +105,11 @@ async def list_packages(
 
 
 @router.get("/{package_id}", response_model=None)
-async def get_package_detail(package_id: int, db: Session = Depends(get_db)):
+async def get_package_detail(
+    package_id: int,
+    db: Session = Depends(get_db),
+    _: dict = Depends(get_current_user),
+):
     package = db.query(Package).filter(Package.id == package_id).first()
     if not package:
         raise HTTPException(status_code=404, detail="Package not found")

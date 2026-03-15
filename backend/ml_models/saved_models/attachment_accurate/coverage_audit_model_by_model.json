@@ -1,0 +1,31 @@
+{
+  "codebert": {
+    "source::synthetic_malicious": 823,
+    "label::1": 1200,
+    "source::github_advisory_database": 377,
+    "source::top_pypi": 394,
+    "label::0": 1200,
+    "source::synthetic_benign": 806
+  },
+  "isolation_forest": {
+    "source::synthetic": 500,
+    "label::1": 375,
+    "source::engineered_from_real_names": 89,
+    "label::0": 299,
+    "source::registry": 85
+  },
+  "gnn": {
+    "source::synthetic": 500,
+    "label::1": 259,
+    "label::0": 254,
+    "source::known_malicious_real": 13
+  },
+  "files": {
+    "codebert_train": "backend/ml_models/datasets/attachment_accurate/processed/codebert/train.csv",
+    "codebert_val": "backend/ml_models/datasets/attachment_accurate/processed/codebert/val.csv",
+    "codebert_test": "backend/ml_models/datasets/attachment_accurate/processed/codebert/test.csv",
+    "isolation_csv": "backend/ml_models/datasets/attachment_accurate/processed/isolation/maintainer_features.csv",
+    "gnn_json": "backend/ml_models/datasets/attachment_accurate/processed/gnn/graphs.json",
+    "training_summary": "backend/ml_models/saved_models/attachment_accurate/training_summary.json"
+  }
+}

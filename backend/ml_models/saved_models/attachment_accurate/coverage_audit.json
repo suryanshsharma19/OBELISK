@@ -1,0 +1,18 @@
+{
+  "source_counts": {},
+  "notes": [
+    "Reused existing processed datasets"
+  ],
+  "datasets": {
+    "codebert_train": "/home/suryanshsharma/work/obelisk-training/OBELISK/backend/ml_models/datasets/attachment_accurate/processed/codebert/train.csv",
+    "codebert_val": "/home/suryanshsharma/work/obelisk-training/OBELISK/backend/ml_models/datasets/attachment_accurate/processed/codebert/val.csv",
+    "codebert_test": "/home/suryanshsharma/work/obelisk-training/OBELISK/backend/ml_models/datasets/attachment_accurate/processed/codebert/test.csv",
+    "isolation_csv": "/home/suryanshsharma/work/obelisk-training/OBELISK/backend/ml_models/datasets/attachment_accurate/processed/isolation/maintainer_features.csv",
+    "gnn_json": "/home/suryanshsharma/work/obelisk-training/OBELISK/backend/ml_models/datasets/attachment_accurate/processed/gnn/graphs.json"
+  },
+  "models": {
+    "codebert": "/home/suryanshsharma/work/obelisk-training/OBELISK/backend/ml_models/saved_models/attachment_accurate/codebert",
+    "isolation_forest": "/home/suryanshsharma/work/obelisk-training/OBELISK/backend/ml_models/saved_models/attachment_accurate/isolation_forest",
+    "gnn": "/home/suryanshsharma/work/obelisk-training/OBELISK/backend/ml_models/saved_models/attachment_accurate/gnn"
+  }
+}

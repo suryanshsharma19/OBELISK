@@ -15,9 +15,12 @@ spec:
       labels:
         app: frontend
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: frontend
-          image: ghcr.io/obelisk/frontend:latest
+          image: ghcr.io/obelisk/frontend:1.0.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -25,6 +28,18 @@ spec:
           env:
             - name: REACT_APP_API_URL
               value: "https://obelisk.local"
+            - name: REACT_APP_WS_URL
+              value: "wss://obelisk.local/ws"
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           resources:
             requests:
               cpu: 100m
@@ -44,3 +59,6 @@ spec:
               port: http
             initialDelaySeconds: 30
             periodSeconds: 20
+      volumes:
+        - name: tmp
+          emptyDir: {}

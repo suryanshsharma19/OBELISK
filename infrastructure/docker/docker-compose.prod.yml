@@ -15,7 +15,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: ghcr.io/obelisk/backend:latest
+    image: ghcr.io/obelisk/backend:1.0.0
     container_name: obelisk-backend
     environment:
       API_HOST: 0.0.0.0
@@ -32,6 +32,10 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       SECRET_KEY: ${SECRET_KEY}
+      AUTH_USERNAME: ${AUTH_USERNAME}
+      AUTH_PASSWORD: ${AUTH_PASSWORD}
+      SECURE_COOKIES: "true"
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://obelisk.local}
     depends_on:
       - postgres
       - neo4j
@@ -39,7 +43,7 @@ services:
     restart: unless-stopped
 
   worker:
-    image: ghcr.io/obelisk/backend:latest
+    image: ghcr.io/obelisk/backend:1.0.0
     container_name: obelisk-worker
     command: ["celery", "-A", "app.workers.celery_app:celery_app", "worker", "-l", "info"]
     environment:
@@ -57,16 +61,20 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       SECRET_KEY: ${SECRET_KEY}
+      AUTH_USERNAME: ${AUTH_USERNAME}
+      AUTH_PASSWORD: ${AUTH_PASSWORD}
     depends_on:
       - backend
     restart: unless-stopped
 
   frontend:
-    image: ghcr.io/obelisk/frontend:latest
+    image: ghcr.io/obelisk/frontend:1.0.0
     container_name: obelisk-frontend
     environment:
       REACT_APP_API_URL: ${PUBLIC_API_URL}
       REACT_APP_WS_URL: ${PUBLIC_WS_URL}
+      REACT_APP_AUTH_USERNAME: ${AUTH_USERNAME}
+      REACT_APP_AUTH_PASSWORD: ${AUTH_PASSWORD}
     restart: unless-stopped
 
   postgres:

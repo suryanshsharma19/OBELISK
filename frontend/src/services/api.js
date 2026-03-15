@@ -1,17 +1,26 @@
 // Axios API client
 
 import axios from 'axios';
-import { API_BASE_URL, STORAGE_KEYS } from '../utils/constants';
+import { API_BASE_URL } from '../utils/constants';
+import {
+  clearAccessToken,
+  ensureAuthenticated,
+  getAccessToken,
+} from './session';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30_000,
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 });
 
-// attach auth token
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+api.interceptors.request.use(async (config) => {
+  if (!config.url?.includes('/api/auth/login')) {
+    await ensureAuthenticated();
+  }
+
+  const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -22,6 +31,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error.response?.status === 401) {
+      clearAccessToken();
+    }
+
     const message =
       error.response?.data?.detail ||
       error.response?.data?.message ||

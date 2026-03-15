@@ -29,7 +29,6 @@ export const MAX_PAGE_SIZE = 100;
 // Local-storage keys
 export const STORAGE_KEYS = {
   THEME: 'obelisk_theme',
-  TOKEN: 'obelisk_token',
   NOTIFICATIONS: 'obelisk_notifications',
 };
 

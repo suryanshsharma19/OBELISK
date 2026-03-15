@@ -1,4 +1,3 @@
-"""
 """FastAPI application entry point."""
 
 from contextlib import asynccontextmanager
@@ -47,14 +46,21 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=[o.strip() for o in settings.cors_origins.split(",") if o.strip()],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
 )
+
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "same-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    return response
 
 
 @app.exception_handler(ObeliskException)
@@ -85,6 +91,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
 
 
 from app.api.routes.health import router as health_router      # noqa: E402
+from app.api.routes.auth import router as auth_router          # noqa: E402
 from app.api.routes.packages import router as packages_router  # noqa: E402
 from app.api.routes.stats import router as stats_router        # noqa: E402
 from app.api.routes.alerts import router as alerts_router      # noqa: E402
@@ -92,6 +99,7 @@ from app.api.routes.crawler import router as crawler_router    # noqa: E402
 from app.api.routes.websocket import router as ws_router       # noqa: E402
 
 app.include_router(health_router, tags=["health"])
+app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
 app.include_router(packages_router, prefix="/api/packages", tags=["packages"])
 app.include_router(stats_router, prefix="/api/stats", tags=["stats"])
 app.include_router(alerts_router, prefix="/api/alerts", tags=["alerts"])

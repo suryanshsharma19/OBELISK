@@ -4,8 +4,9 @@ import asyncio
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from app.api.dependencies import get_current_user
 from app.core.logging import setup_logger
 
 logger = setup_logger(__name__)
@@ -23,7 +24,7 @@ _crawler_state: dict[str, Any] = {
 
 
 @router.post("/start")
-async def start_crawler():
+async def start_crawler(_: dict = Depends(get_current_user)):
     if _crawler_state["running"]:
         return {"status": "already_running", "message": "Crawler is already active"}
 
@@ -39,7 +40,7 @@ async def start_crawler():
 
 
 @router.post("/stop")
-async def stop_crawler():
+async def stop_crawler(_: dict = Depends(get_current_user)):
     if not _crawler_state["running"]:
         return {"status": "not_running", "message": "Crawler is not active"}
 
@@ -49,7 +50,7 @@ async def stop_crawler():
 
 
 @router.get("/status")
-async def crawler_status():
+async def crawler_status(_: dict = Depends(get_current_user)):
     return {
         "running": _crawler_state["running"],
         "last_check": _crawler_state["last_check"],

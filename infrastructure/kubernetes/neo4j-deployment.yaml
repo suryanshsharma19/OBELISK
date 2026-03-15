@@ -27,6 +27,9 @@ spec:
       labels:
         app: neo4j
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: neo4j
           image: neo4j:5.15-community
@@ -37,19 +40,23 @@ spec:
             - containerPort: 7687
               name: bolt
           env:
-            - name: NEO4J_PASSWORD
+            - name: NEO4J_AUTH
               valueFrom:
                 secretKeyRef:
                   name: obelisk-secrets
-                  key: NEO4J_PASSWORD
-            - name: NEO4J_AUTH
-              value: "neo4j/$(NEO4J_PASSWORD)"
+                  key: NEO4J_AUTH
             - name: NEO4J_apoc_export_file_enabled
-              value: "true"
+              value: "false"
             - name: NEO4J_apoc_import_file_enabled
-              value: "true"
+              value: "false"
             - name: NEO4J_dbms_security_procedures_unrestricted
-              value: "apoc.*"
+              value: ""
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 7474
+            capabilities:
+              drop: ["ALL"]
           volumeMounts:
             - name: neo4j-data
               mountPath: /data

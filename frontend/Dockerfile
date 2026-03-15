@@ -6,10 +6,13 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm ci
 
 # Copy source
 COPY . .
+
+# Drop root privileges
+USER node
 
 # Expose port
 EXPOSE 3000

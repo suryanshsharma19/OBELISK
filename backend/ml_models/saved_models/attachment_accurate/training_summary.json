@@ -1,0 +1,25 @@
+{
+  "device": "cuda",
+  "elapsed_seconds": 423.58,
+  "metrics": {
+    "codebert": {
+      "accuracy": 0.9541666666666667,
+      "precision": 0.9823008849557522,
+      "recall": 0.925,
+      "f1": 0.9527896995708155
+    },
+    "isolation_forest": {
+      "accuracy": 0.5037037037037037,
+      "precision": 0.75,
+      "recall": 0.16,
+      "f1": 0.26373626373626374,
+      "contamination": 0.12
+    },
+    "gnn": {
+      "accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    }
+  }
+}

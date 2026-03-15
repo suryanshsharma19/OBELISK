@@ -26,6 +26,7 @@ tree-sitter-python==0.20.4
 httpx==0.26.0
 python-Levenshtein==0.23.0
 python-dotenv==1.0.0
+PyJWT==2.10.1
 
 # Task Queue
 celery==5.3.6

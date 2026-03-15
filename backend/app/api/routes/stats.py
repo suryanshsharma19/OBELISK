@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import get_db
+from app.api.dependencies import get_current_user, get_db
 from app.core.logging import setup_logger
 from app.db.models import Alert, Package, ThreatLevel
 
@@ -17,7 +17,10 @@ router = APIRouter()
 
 
 @router.get("/overview")
-async def stats_overview(db: Session = Depends(get_db)):
+async def stats_overview(
+    db: Session = Depends(get_db),
+    _: dict = Depends(get_current_user),
+):
     total_packages = db.query(func.count(Package.id)).scalar() or 0
     malicious_packages = (
         db.query(func.count(Package.id))
@@ -69,6 +72,7 @@ async def stats_overview(db: Session = Depends(get_db)):
 async def stats_trend(
     days: int = Query(7, ge=1, le=90),
     db: Session = Depends(get_db),
+    _: dict = Depends(get_current_user),
 ):
     trend = []
     today = date.today()

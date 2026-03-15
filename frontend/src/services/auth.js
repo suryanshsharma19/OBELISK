@@ -1,20 +1,24 @@
 // Auth helpers for token lifecycle and credential-based login.
 
 import api from './api';
-import { STORAGE_KEYS } from '../utils/constants';
+import {
+  clearAccessToken,
+  getAccessToken,
+  setAccessToken,
+} from './session';
 
 const DEFAULT_AUTH_ENDPOINT = '/api/auth/login';
 
 export function setToken(token) {
-  localStorage.setItem(STORAGE_KEYS.TOKEN, token);
+  setAccessToken(token);
 }
 
 export function getToken() {
-  return localStorage.getItem(STORAGE_KEYS.TOKEN);
+  return getAccessToken();
 }
 
 export function clearToken() {
-  localStorage.removeItem(STORAGE_KEYS.TOKEN);
+  clearAccessToken();
 }
 
 export function isAuthenticated() {
@@ -46,6 +50,16 @@ export async function login(username, password) {
   };
 }
 
-export function logout() {
+export async function logout() {
+  try {
+    await api.post('/api/auth/logout');
+  } catch {
+    // no-op on logout failure; local state should still be cleared
+  }
   clearToken();
+}
+
+export async function getCurrentUser() {
+  const response = await api.get('/api/auth/me');
+  return response.data;
 }

@@ -11,7 +11,13 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     debug: bool = False
-    secret_key: str = "change-me-in-production"
+    secret_key: str = "REPLACE_WITH_STRONG_SECRET"
+    access_token_expire_minutes: int = 60
+    jwt_algorithm: str = "HS256"
+    auth_username: str = "admin"
+    auth_password: str = "REPLACE_WITH_STRONG_PASSWORD"
+    cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+    secure_cookies: bool = False
 
     # PostgreSQL
     postgres_host: str = "localhost"

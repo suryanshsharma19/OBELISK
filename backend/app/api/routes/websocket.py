@@ -8,6 +8,7 @@ from typing import Any
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+from app.core.auth import safe_decode_access_token
 from app.core.logging import setup_logger
 
 logger = setup_logger(__name__)
@@ -47,6 +48,16 @@ manager = ConnectionManager()
 
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket) -> None:
+    token = websocket.query_params.get("token")
+    auth_header = websocket.headers.get("authorization", "")
+    if not token and auth_header.lower().startswith("bearer "):
+        token = auth_header.split(" ", 1)[1].strip()
+
+    payload = safe_decode_access_token(token) if token else None
+    if payload is None:
+        await websocket.close(code=1008)
+        return
+
     await manager.connect(websocket)
     try:
         while True:

@@ -15,9 +15,12 @@ spec:
       labels:
         app: backend
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: backend
-          image: ghcr.io/obelisk/backend:latest
+          image: ghcr.io/obelisk/backend:1.0.0
           imagePullPolicy: IfNotPresent
           command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
           ports:
@@ -28,6 +31,18 @@ spec:
                 name: obelisk-config
             - secretRef:
                 name: obelisk-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 10001
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: app-logs
+              mountPath: /app/logs
+            - name: tmp
+              mountPath: /tmp
           resources:
             requests:
               cpu: 250m
@@ -47,3 +62,8 @@ spec:
               port: http
             initialDelaySeconds: 30
             periodSeconds: 20
+      volumes:
+        - name: app-logs
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}

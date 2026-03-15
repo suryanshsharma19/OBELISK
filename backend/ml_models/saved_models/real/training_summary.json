@@ -1,0 +1,23 @@
+{
+  "timestamp_utc": "2026-03-15T15:50:58.226322Z",
+  "device": "cuda",
+  "metrics": {
+    "codebert_accuracy": 1.0,
+    "codebert_precision": 1.0,
+    "codebert_recall": 1.0,
+    "codebert_f1": 1.0,
+    "isolation_accuracy": 0.7086956521739131,
+    "isolation_precision": 0.6,
+    "isolation_recall": 0.12857142857142856,
+    "isolation_f1": 0.21176470588235294,
+    "isolation_contamination": 0.05,
+    "gnn_accuracy": 1.0,
+    "gnn_precision": 1.0,
+    "gnn_recall": 1.0,
+    "gnn_f1": 1.0
+  },
+  "class_distribution": {
+    "note": "See processed CSV/JSON datasets in datasets/real/processed"
+  },
+  "elapsed_seconds": 191.48
+}
