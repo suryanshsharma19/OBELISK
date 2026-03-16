@@ -85,6 +85,10 @@ frontend/out/
 *.parquet
 *.jsonl
 
+# Dataset pipeline artifacts (local/offline cache)
+backend/ml_models/datasets/raw/
+backend/ml_models/datasets/processed/
+
 # Notebook checkpoints
 .ipynb_checkpoints/
 *.ipynb_checkpoints

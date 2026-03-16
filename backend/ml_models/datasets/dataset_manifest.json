@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "description": "Dataset sources used by OBELISK collection pipeline",
+  "sources": [
+    {
+      "name": "Backstabbers Knife Collection",
+      "type": "git",
+      "url": "https://github.com/dasfreak/Backstabbers-Knife-Collection.git",
+      "purpose": ["codebert", "anomaly"]
+    },
+    {
+      "name": "GitHub Advisory Database",
+      "type": "git",
+      "url": "https://github.com/github/advisory-database.git",
+      "purpose": ["codebert", "anomaly", "gnn"]
+    },
+    {
+      "name": "CodeSearchNet",
+      "type": "manual-large",
+      "url": "https://github.com/github/CodeSearchNet",
+      "drop_zone": "backend/ml_models/datasets/raw/manual/codesearchnet",
+      "purpose": ["codebert"]
+    },
+    {
+      "name": "Libraries.io Open Data",
+      "type": "manual-large",
+      "url": "https://libraries.io/data",
+      "drop_zone": "backend/ml_models/datasets/raw/manual/librariesio",
+      "purpose": ["gnn"]
+    },
+    {
+      "name": "vx-underground MalwareSourceCode",
+      "type": "manual-sensitive",
+      "url": "https://github.com/vxunderground/MalwareSourceCode",
+      "drop_zone": "backend/ml_models/datasets/raw/manual/malwaresourcecode",
+      "purpose": ["codebert"]
+    },
+    {
+      "name": "Top PyPI Packages",
+      "type": "api",
+      "url": "https://hugovk.github.io/top-pypi-packages/top-pypi-packages-30-days.min.json",
+      "purpose": ["codebert", "anomaly", "gnn"]
+    },
+    {
+      "name": "npm Registry",
+      "type": "api",
+      "url": "https://registry.npmjs.org/",
+      "purpose": ["codebert", "anomaly", "gnn"]
+    }
+  ]
+}
