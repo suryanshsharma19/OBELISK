@@ -1,0 +1,37 @@
+{
+  "dataset": {
+    "total_samples": 27735,
+    "raw_codebert_samples": 24724,
+    "codebert_samples": 16957,
+    "anomaly_samples": 1506,
+    "gnn_samples": 1505,
+    "generated_at": "2026-03-18T06:50:19.740198+00:00",
+    "outputs": {
+      "unified": "/run/media/suryanshsharma/Work Disk/Projects/OBELISK/backend/ml_models/datasets/processed/unified/unified_samples.jsonl",
+      "codebert_csv": "/run/media/suryanshsharma/Work Disk/Projects/OBELISK/backend/ml_models/datasets/processed/codebert/dataset.csv",
+      "maintainer_csv": "/run/media/suryanshsharma/Work Disk/Projects/OBELISK/backend/ml_models/datasets/processed/maintainers/maintainer_features.csv",
+      "gnn_dir": "/run/media/suryanshsharma/Work Disk/Projects/OBELISK/backend/ml_models/datasets/processed/dependency_graphs"
+    }
+  },
+  "best_runs": {
+    "codebert": {
+      "run": "C",
+      "f1": 0.8477,
+      "path": "backend/ml_models/saved_models/codebert_runC"
+    },
+    "gnn": {
+      "run": "A",
+      "f1": 1.0,
+      "path": "backend/ml_models/saved_models/gnn_runA"
+    },
+    "isolation_forest": {
+      "run": "F",
+      "precision": 1.0,
+      "recall": 0.9304,
+      "f1": 0.964,
+      "threshold": -0.03963,
+      "quantile": 0.219,
+      "path": "backend/ml_models/saved_models/isolation_sweep/run_F"
+    }
+  }
+}
