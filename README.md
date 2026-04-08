@@ -1,6 +1,10 @@
-# OBELISK
+<p align="center">
+  <img src="docs/diagrams/obelisk.svg" alt="OBELISK logo" width="140" />
+</p>
 
-Omniscient Behavioral Entity Leveraging Intelligent Surveillance for Kill-chain Prevention.
+<h1 align="center">OBELISK</h1>
+
+<p align="center">Omniscient Behavioral Entity Leveraging Intelligent Surveillance for Kill-chain Prevention.</p>
 
 OBELISK is an AI-assisted software supply chain security platform focused on detecting potentially malicious npm and PyPI packages through a multi-signal analysis pipeline, graph intelligence, and actionable risk reporting.
 
