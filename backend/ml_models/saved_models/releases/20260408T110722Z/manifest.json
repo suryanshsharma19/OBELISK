@@ -1,0 +1,49 @@
+{
+  "release_id": "20260408T110722Z",
+  "created_utc": "2026-04-08T11:07:22.574525+00:00",
+  "benchmark_json": "backend/ml_models/saved_models/realistic_leaderboard.json",
+  "artifacts": [
+    {
+      "path": "backend/ml_models/saved_models/codebert_best/model.safetensors",
+      "exists": true,
+      "size_bytes": 498612800,
+      "sha256": "17886871600d16524db3dbf398f04e86522fa777c5b6e51b35c51af2c1c5309d"
+    },
+    {
+      "path": "backend/ml_models/saved_models/codebert_best/config.json",
+      "exists": true,
+      "size_bytes": 761,
+      "sha256": "024a7f20dfcbfce6cfdaccb981cdd46d57d5179b3978a289d5a02858036341d3"
+    },
+    {
+      "path": "backend/ml_models/saved_models/codebert_best/tokenizer.json",
+      "exists": true,
+      "size_bytes": 3558648,
+      "sha256": "ca59632112d18bffd237dbfa1f5b5c35d92b30d0587165e473cea7f763d4ad62"
+    },
+    {
+      "path": "backend/ml_models/saved_models/gnn_best/model.pt",
+      "exists": true,
+      "size_bytes": 305137,
+      "sha256": "36e535fbdf95ea3ba86f24a5f4a7aa192f8a90e08659670c2d6013164cf84560"
+    },
+    {
+      "path": "backend/ml_models/saved_models/isolation_forest_best_realistic/model.joblib",
+      "exists": true,
+      "size_bytes": 22061561,
+      "sha256": "2c6000da558b038fbc0817ed094d2c227fd244a6c9f44c5c0a3f101894e68298"
+    },
+    {
+      "path": "backend/ml_models/saved_models/isolation_forest_best_realistic/scaler.joblib",
+      "exists": true,
+      "size_bytes": 687,
+      "sha256": "96dc46bac72bb1207907a52cd891356f53cea841a1e2a5f6b63ad35b0e048005"
+    },
+    {
+      "path": "backend/ml_models/saved_models/isolation_forest_best_realistic/metadata.joblib",
+      "exists": true,
+      "size_bytes": 251,
+      "sha256": "b9aea33a76f02e439301d1f303151e8a13676d4d62053f31fe945e04fd1be068"
+    }
+  ]
+}
