@@ -1,211 +1,177 @@
-<div align="center">
+# OBELISK
 
-# 🏛️ OBELISK
+Omniscient Behavioral Entity Leveraging Intelligent Surveillance for Kill-chain Prevention.
 
-### **O**mniscient **B**ehavioral **E**ntity **L**everaging **I**ntelligent **S**urveillance for **K**ill-chain Prevention
-
-An AI-powered software supply chain attack detection platform that combines deep learning, graph analysis, and behavioral heuristics to identify malicious packages in real time.
+OBELISK is an AI-assisted software supply chain security platform focused on detecting potentially malicious npm and PyPI packages through a multi-signal analysis pipeline, graph intelligence, and actionable risk reporting.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![React 18](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](https://react.dev)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
-
-</div>
-
----
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Key Features](#key-features)
-- [System Architecture](#system-architecture)
-- [Tech Stack](#tech-stack)
-- [ML Detection Pipeline](#ml-detection-pipeline)
-- [Database Schema](#database-schema)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Quick Start (Docker)](#quick-start-docker)
-  - [Manual Setup](#manual-setup)
-- [Usage](#usage)
-- [API Reference](#api-reference)
-- [Project Structure](#project-structure)
-- [Deployment](#deployment)
-- [Configuration](#configuration)
+- [What OBELISK Does](#what-obelisk-does)
+- [Key Capabilities](#key-capabilities)
+- [Architecture](#architecture)
+- [Technology Stack](#technology-stack)
+- [Repository Layout](#repository-layout)
+- [Quick Start (Docker Compose)](#quick-start-docker-compose)
+- [Local Development](#local-development)
+- [API Surface](#api-surface)
 - [Testing](#testing)
+- [ML Operations](#ml-operations)
+- [Deployment](#deployment)
+- [Security and Configuration Notes](#security-and-configuration-notes)
+- [Documentation](#documentation)
 - [Contributing](#contributing)
 - [License](#license)
 
----
+## What OBELISK Does
 
-## Overview
+Software supply chain attacks are increasingly sophisticated and often difficult to detect with static indicators alone. OBELISK combines:
 
-Software supply chain attacks — such as typosquatting, dependency confusion, and malicious code injection — are among the fastest-growing threats in modern software development. **OBELISK** is a production-grade security platform that proactively detects these threats by analyzing packages from npm and PyPI registries using a multi-layered AI pipeline.
+- package metadata analysis
+- code and behavior heuristics
+- graph-based dependency risk signals
+- weighted score aggregation
 
-OBELISK monitors package registries in real time, runs five independent ML/heuristic detectors in parallel, builds dependency graphs in a graph database, and surfaces results through an interactive dashboard — enabling security teams to catch compromised packages before they reach production.
+The platform is designed to help security teams evaluate package risk quickly, monitor registry activity, and triage high-risk findings through a unified API and dashboard.
 
----
+## Key Capabilities
 
-## Key Features
+- Multi-detector analysis pipeline for npm and PyPI packages
+- Weighted risk scoring and threat classification
+- Real-time crawler controls and WebSocket event feed
+- Dependency graph analysis with Neo4j-backed traversal
+- Caching with Redis for repeat analysis efficiency
+- Alerting and dashboard statistics endpoints
+- Containerized local environment with PostgreSQL, Neo4j, Redis, backend, and frontend
 
-| Category | Feature |
-|----------|---------|
-| **Detection** | Five parallel ML detectors: typosquatting, code analysis (CodeBERT), behavioral analysis, maintainer anomaly detection, and GNN-based dependency graph analysis |
-| **Risk Scoring** | Weighted ensemble scoring (0–100) with configurable thresholds and confidence metrics |
-| **Real-Time Monitoring** | WebSocket-powered live feed of registry crawls and newly flagged packages |
-| **Dependency Graphs** | Neo4j-backed graph traversal to identify transitive supply chain risks up to 5 levels deep |
-| **Sandboxed Execution** | Docker-based sandbox for safe dynamic analysis of package install scripts |
-| **Interactive Dashboard** | React + Tailwind UI with charts, threat distribution views, and package detail pages |
-| **Alerting** | Automatic alert generation for high/critical threats with notification support |
-| **Caching** | Redis-backed result caching (TTL 3600s) for fast repeat lookups |
-| **API Security** | SHA-256 hashed API keys, rate limiting (sliding window), and open-redirect protection |
-| **Infrastructure** | Full Docker Compose, Kubernetes manifests, Terraform modules, and Prometheus/Grafana monitoring |
+## Architecture
 
----
+At a high level:
 
-## System Architecture
+1. React frontend provides analyst workflows for analysis, crawler operations, and alerts.
+2. FastAPI backend orchestrates detectors, scoring, persistence, and API responses.
+3. PostgreSQL stores core relational entities.
+4. Neo4j stores and queries dependency graph relationships.
+5. Redis provides low-latency cache support.
 
-OBELISK follows a layered microservices architecture. Users interact through a React dashboard, which communicates over REST/WebSocket with a FastAPI backend. The backend orchestrates ML detection, persists results across three databases, and dispatches background work via Celery.
+Available architecture diagrams:
 
-<div align="center">
-<img src="docs/diagrams/system-architecture.png" alt="System Architecture" width="850" />
-<br /><em>High-level system architecture — API gateway, analysis engine, databases, and external integrations</em>
-</div>
+- [System Architecture](docs/diagrams/system-architecture.png)
+- [ML Detection Pipeline](docs/diagrams/ml-detection-pipeline.png)
+- [Database Schema](docs/diagrams/database-schema.png)
+- [Deployment Architecture](docs/diagrams/deployment-architecture.png)
 
-<br />
+## Technology Stack
 
-The **Analysis Service** orchestrates the full pipeline: check cache → fetch registry metadata → run all 5 detectors concurrently via `asyncio.gather` → compute weighted risk score → persist results to PostgreSQL & Neo4j → cache in Redis → fire alerts if critical.
+### Backend
 
----
+- Python 3.10+
+- FastAPI
+- SQLAlchemy + Alembic
+- Celery
+- PyTorch, Transformers, scikit-learn, torch-geometric
 
-## Tech Stack
+### Frontend
 
-| Layer | Technologies |
-|-------|-------------|
-| **Frontend** | React 18, Redux Toolkit, React Router v6, Tailwind CSS, Recharts, D3.js, Lucide Icons |
-| **Backend** | Python 3.10+, FastAPI, Pydantic v2, SQLAlchemy 2.0, Alembic, Celery |
-| **ML / AI** | PyTorch, Transformers (CodeBERT), scikit-learn (Isolation Forest), PyTorch Geometric (GNN), Tree-sitter |
-| **Databases** | PostgreSQL 15, Neo4j 5.15, Redis 7 |
-| **Infrastructure** | Docker & Docker Compose, Kubernetes, Terraform, Nginx |
-| **Monitoring** | Prometheus, Grafana (dashboards + alert rules) |
-| **CI/CD** | GitHub Actions (backend tests, frontend tests, deployment) |
-| **Code Quality** | Black, Flake8, Mypy, ESLint, Prettier |
+- React 18
+- Redux Toolkit
+- React Router
+- Recharts and D3
 
----
+### Data Stores and Infrastructure
 
-## ML Detection Pipeline
+- PostgreSQL 15
+- Neo4j 5
+- Redis 7
+- Docker Compose
+- Kubernetes manifests and Terraform modules
 
-OBELISK employs five specialized detectors that run **in parallel** and feed into a weighted risk scorer:
+## Repository Layout
 
-<div align="center">
-<img src="docs/diagrams/ml-detection-pipeline.png" alt="ML Detection Pipeline" width="750" />
-<br /><em>Input validation → feature engineering → parallel detection models → weighted aggregation → threat classification</em>
-</div>
+```text
+OBELISK/
+  backend/         FastAPI app, ML modules, scripts, tests
+  frontend/        React application
+  docs/            Architecture, API, deployment, security docs
+  infrastructure/  Docker, Kubernetes, Terraform assets
+  monitoring/      Prometheus and Grafana configuration
+  scripts/         Project-level automation scripts
+```
 
-<br />
+## Quick Start (Docker Compose)
 
-### 1. Typosquatting Detector — *weight: 0.25*
-Compares package names against a curated list of popular packages using **Levenshtein distance** and **similarity ratios**. Flags packages with edit distance ≤ 2 or similarity ≥ 0.85 to known legitimate packages.
-
-### 2. Code Analyzer (CodeBERT) — *weight: 0.35*
-Two-pronged analysis:
-- **Pattern scanning:** 23+ compiled regex patterns detecting `eval()`, `exec()`, `subprocess`, `os.system`, `child_process`, `curl | sh`, base64 encoding, dynamic imports, and more — each weighted by risk severity (5–25).
-- **CodeBERT inference:** When the fine-tuned model is loaded, blends the pattern score (40%) with the CodeBERT malicious probability (60%) for a hybrid result.
-
-### 3. Behavior Analyzer — *weight: 0.15*
-Scores suspicious lifecycle and runtime behaviors: `preinstall`/`postinstall` hooks, pipe-to-shell commands, obfuscated entry points, missing repository links, excessive dependencies, base64/Buffer manipulation, and environment variable access.
-
-### 4. Anomaly Detector — *weight: 0.15*
-Profiles maintainer risk signals: new accounts (< 30 days), disposable email providers, first-time publishers, unverified emails, missing GitHub presence, and zero download history. Optionally enhanced with an **Isolation Forest** ML model.
-
-### 5. GNN Dependency Analyzer — *weight: 0.10*
-Traverses the dependency graph in **Neo4j** up to 5 levels deep, identifying known malicious dependencies, high-risk transitive nodes, and suspicious graph topology. Optionally enhanced with a **Graph Neural Network** model.
-
-### Risk Scoring
-The **RiskScorer** aggregates all detector outputs into a final weighted score (0–100), computes a **confidence metric** based on inter-detector agreement (threshold: 50), and classifies the threat level. Packages scoring ≥ 60 are flagged as **malicious**.
-
----
-
-## Database Schema
-
-OBELISK uses a multi-database architecture: **PostgreSQL** for relational storage, **Neo4j** for dependency graphs, and **Redis** for caching.
-
-<div align="center">
-<img src="docs/diagrams/database-schema.png" alt="Database Schema" width="600" />
-<br /><em>PostgreSQL entity-relationship diagram — Users, Packages, Analyses, Alerts, and Dependencies</em>
-</div>
-
-<br />
-
-<details>
-<summary><strong>🌐 Neo4j Dependency Graph Example</strong></summary>
-<br />
-<div align="center">
-<img src="docs/diagrams/dependency-graph.png" alt="Neo4j Dependency Graph" width="600" />
-<br /><em>Graph visualization showing how OBELISK traces transitive dependencies to detect malicious packages hidden deep in the supply chain</em>
-</div>
-</details>
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- **Docker** & **Docker Compose** (recommended)
-- Or for manual setup:
-  - Python 3.10+
-  - Node.js 18+ & npm
-  - PostgreSQL 15
-  - Neo4j 5.x
-  - Redis 7
-
-### Quick Start (Docker)
+### 1. Clone and enter the repository
 
 ```bash
-# Clone the repository
 git clone https://github.com/suryanshsharma19/OBELISK.git
 cd OBELISK
+```
 
-# Copy environment filesa
+### 2. Create environment files
+
+```bash
 cp .env.example .env
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
+```
 
-# Start all services
+### 3. Start the full stack
+
+```bash
 docker-compose up -d
 ```
 
-Once running:
+### 4. Access services
 
-| Service | URL |
-|---------|-----|
-| Frontend | [http://localhost:3000](http://localhost:3000) |
-| Backend API | [http://localhost:8000](http://localhost:8000) |
-| API Docs (Swagger) | [http://localhost:8000/docs](http://localhost:8000/docs) |
-| API Docs (ReDoc) | [http://localhost:8000/redoc](http://localhost:8000/redoc) |
-| Neo4j Browser | [http://localhost:7474](http://localhost:7474) |
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+- Neo4j Browser: http://localhost:7474
 
-### Manual Setup
+## Local Development
 
-**Backend:**
+### Option A: Make targets (recommended for consistency)
+
+```bash
+make setup
+make dev
+```
+
+Useful targets:
+
+- `make down` stop services
+- `make clean` stop and remove volumes/cache artifacts
+- `make test` run backend tests
+- `make datasets-quick` build a small local dataset bundle
+- `make datasets` build a larger dataset bundle
+- `make datasets-offline` rebuild processed files from local raw cache
+- `make load-validate` run backend concurrency/load validation
+- `make benchmark-analyze` benchmark package analysis endpoint
+- `make ml-gates` enforce ML acceptance thresholds
+- `make ml-version` generate versioned ML artifact manifest
+- `make ml-pipeline` run train/eval/gate/version pipeline
+
+### Option B: Manual backend/frontend startup
+
+Backend:
 
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate   # Windows: venv\Scripts\activate
+source venv/bin/activate
 pip install -r requirements.txt
-
-# Initialize the database
 python scripts/init_db.py
 python scripts/seed_data.py
-
-# Start the server
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-**Frontend:**
+Frontend (new terminal):
 
 ```bash
 cd frontend
@@ -213,207 +179,86 @@ npm install
 npm start
 ```
 
-**Using Make:**
+## API Surface
 
-```bash
-make setup   # Install all dependencies
-make dev     # Start development environment via Docker
-make test    # Run test suite
-make lint    # Run linters
-make format  # Format code
-```
+Core routes exposed by the backend include:
 
----
+- `GET /` service status
+- `GET /health` health check
+- `POST /api/auth/login` authentication
+- `GET /api/packages` list package analyses
+- `POST /api/packages/analyze` submit package for analysis
+- `GET /api/stats` dashboard statistics
+- `GET /api/alerts` alert listing
+- `POST /api/crawler/start` start crawler
+- `POST /api/crawler/stop` stop crawler
+- `WS /ws` real-time event stream
 
-## Usage
-
-### Analyze a Package
-
-Send a package for analysis via the REST API:
-
-```bash
-curl -X POST http://localhost:8000/api/packages/analyze \
-  -H "Content-Type: application/json" \
-  -d '{"name": "suspicious-package", "registry": "npm"}'
-```
-
-Or use the **Analyze** page in the web dashboard to submit a package name and see a detailed risk breakdown with evidence cards, code highlights, and dependency graphs.
-
-### Monitor the Registry Crawler
-
-Navigate to `/crawler` in the dashboard to view the live feed of newly published packages being scanned. Use the crawler controls to start/stop monitoring.
-
-### View Alerts
-
-The `/alerts` page lists all flagged packages with severity levels, timestamps, and links to detailed analysis results.
-
----
-
-## API Reference
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/health` | Health check |
-| `GET` | `/api/packages` | List analyzed packages |
-| `POST` | `/api/packages/analyze` | Submit a package for analysis |
-| `GET` | `/api/packages/{id}` | Get package analysis details |
-| `GET` | `/api/alerts` | List security alerts |
-| `GET` | `/api/stats` | Dashboard statistics |
-| `POST` | `/api/crawler/start` | Start registry crawler |
-| `POST` | `/api/crawler/stop` | Stop registry crawler |
-| `WS` | `/ws` | Real-time event stream |
-
-Full interactive documentation is available at `/docs` (Swagger UI) and `/redoc` (ReDoc) when the backend is running.
-
----
-
-## Project Structure
-
-```
-obelisk/
-├── backend/                    # FastAPI Python backend
-│   ├── app/
-│   │   ├── api/routes/         # REST & WebSocket endpoints
-│   │   ├── core/               # Security, logging, exceptions
-│   │   ├── db/                 # PostgreSQL, Neo4j, Redis clients
-│   │   ├── ml/                 # ML detection engine (5 detectors)
-│   │   ├── models/             # SQLAlchemy ORM models
-│   │   ├── schemas/            # Pydantic request/response schemas
-│   │   ├── services/           # Business logic & orchestration
-│   │   ├── utils/              # Helpers, validators, constants
-│   │   └── workers/            # Celery tasks & scheduler
-│   ├── ml_models/              # Datasets, training scripts, saved models
-│   ├── scripts/                # DB init, seeding, health checks
-│   └── tests/                  # Pytest suite (API, ML, services, integration)
-├── frontend/                   # React SPA
-│   └── src/
-│       ├── components/         # Dashboard, PackageAnalysis, Alerts, Crawler, Settings
-│       ├── pages/              # Route-level page components
-│       ├── hooks/              # Custom React hooks (API, WebSocket, debounce)
-│       ├── services/           # API client & WebSocket client
-│       ├── store/              # Redux Toolkit slices & middleware
-│       └── styles/             # CSS variables & utility classes
-├── infrastructure/
-│   ├── docker/                 # Docker Compose (dev & prod), Nginx
-│   ├── kubernetes/             # K8s manifests (deployments, services, ingress)
-│   └── terraform/              # IaC modules for cloud deployment
-├── monitoring/
-│   ├── prometheus/             # Prometheus configuration
-│   ├── grafana/                # Dashboards & provisioning
-│   └── alerts/                 # Alert rules
-├── docs/                       # Architecture, API, security, deployment docs
-├── scripts/                    # Setup, deploy, backup, monitoring shell scripts
-├── .github/workflows/          # CI/CD pipelines
-├── docker-compose.yml          # Development orchestration
-├── Makefile                    # Developer convenience commands
-└── README.md
-```
-
----
-
-## Configuration
-
-OBELISK is configured via environment variables. Copy the `.env.example` files and customize:
-
-```bash
-cp .env.example .env
-```
-
-### Key Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `SECRET_KEY` | `change-me` | Application secret key |
-| `POSTGRES_HOST` | `localhost` | PostgreSQL host |
-| `POSTGRES_PORT` | `5432` | PostgreSQL port |
-| `POSTGRES_DB` | `obelisk` | Database name |
-| `NEO4J_URI` | `bolt://localhost:7687` | Neo4j connection URI |
-| `REDIS_HOST` | `localhost` | Redis host |
-| `SANDBOX_TIMEOUT` | `300` | Sandbox execution timeout (seconds) |
-| `SANDBOX_MEMORY_LIMIT` | `512m` | Sandbox memory cap |
-| `REACT_APP_API_URL` | `http://localhost:8000` | Backend URL for the frontend |
-
----
+See [docs/API.md](docs/API.md) and [docs/api/openapi.yaml](docs/api/openapi.yaml) for details.
 
 ## Testing
 
+### Full suite helper
+
 ```bash
-# Run the full backend test suite
-cd backend && pytest
-
-# Run with coverage report
-pytest --cov=app --cov-report=html
-
-# Run specific test categories
-pytest tests/test_ml/           # ML detector tests
-pytest tests/test_api/          # API endpoint tests
-pytest tests/test_services/     # Service layer tests
-pytest tests/test_integration/  # End-to-end tests
-
-# Frontend tests
-cd frontend && npm test
+./scripts/run_tests.sh all
 ```
 
----
+### Backend
+
+```bash
+cd backend
+pytest
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm test
+```
+
+## ML Operations
+
+The repository includes model and dataset workflows under backend/ml_models and automation targets in the top-level Makefile.
+
+For reproducibility and release checks, see:
+
+- [docs/ML_RELEASE_CHECKLIST.md](docs/ML_RELEASE_CHECKLIST.md)
+- `make ml-pipeline`
+- `make ml-version`
 
 ## Deployment
 
-<div align="center">
-<img src="docs/diagrams/deployment-architecture.png" alt="Deployment Architecture" width="850" />
-<br /><em>Docker deployment topology — Nginx reverse proxy, Uvicorn backend, Celery workers, database containers, and Prometheus/Grafana monitoring</em>
-</div>
+Deployment paths are available for:
 
-<br />
+- Docker Compose
+- Kubernetes manifests in infrastructure/kubernetes
+- Terraform modules in infrastructure/terraform
 
-### Docker Compose (Production)
+Deployment guide: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
-```bash
-docker-compose -f infrastructure/docker/docker-compose.prod.yml up -d
-```
+## Security and Configuration Notes
 
-### Kubernetes
+- Default credentials and secrets in example env files are for local development only.
+- Set strong values for `SECRET_KEY`, database passwords, and auth credentials before non-local use.
+- Restrict CORS origins and review security headers and auth settings in backend configuration.
 
-```bash
-kubectl apply -f infrastructure/kubernetes/namespace.yaml
-kubectl apply -f infrastructure/kubernetes/
-```
+Security reference: [docs/SECURITY.md](docs/SECURITY.md)
 
-### Terraform
+## Documentation
 
-```bash
-cd infrastructure/terraform
-terraform init
-terraform plan
-terraform apply
-```
-
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed deployment guides.
-
----
+- [Architecture](docs/ARCHITECTURE.md)
+- [Development Guide](docs/DEVELOPMENT.md)
+- [API Reference](docs/API.md)
+- [Contributing Guide](docs/CONTRIBUTING.md)
+- [Deployment Guide](docs/DEPLOYMENT.md)
+- [Security Guide](docs/SECURITY.md)
 
 ## Contributing
 
-Contributions are welcome! Please read the [Contributing Guide](docs/CONTRIBUTING.md) before submitting a pull request.
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-Please ensure all tests pass and code is formatted before submitting.
-
----
+Contributions are welcome. Please read [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) before opening a pull request.
 
 ## License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
-
----
-
-<div align="center">
-
-**Built with purpose. Securing the supply chain, one package at a time.**
-
-</div>
-
+Licensed under the MIT License. See [LICENSE](LICENSE).
