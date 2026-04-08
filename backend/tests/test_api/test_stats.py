@@ -22,9 +22,9 @@ def test_overview_with_packages(client, db_session):
         db_session.add(
             Package(
                 name=name, version="1.0.0",
-                registry=RegistryType.npm,
+                registry=RegistryType.NPM,
                 risk_score=90 if mal else 5,
-                threat_level=ThreatLevel.critical if mal else ThreatLevel.safe,
+                threat_level=ThreatLevel.CRITICAL if mal else ThreatLevel.SAFE,
                 is_malicious=mal,
                 analyzed_at=datetime.now(timezone.utc),
             )
@@ -43,8 +43,8 @@ def test_overview_threat_distribution(client, db_session):
     db_session.add(
         Package(
             name="medium-pkg", version="1.0.0",
-            registry=RegistryType.npm,
-            risk_score=45, threat_level=ThreatLevel.medium,
+            registry=RegistryType.NPM,
+            risk_score=45, threat_level=ThreatLevel.MEDIUM,
             analyzed_at=datetime.now(timezone.utc),
         )
     )

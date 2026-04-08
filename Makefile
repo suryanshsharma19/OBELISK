@@ -1,4 +1,5 @@
-.PHONY: help setup dev down clean test lint format datasets datasets-quick datasets-offline
+.PHONY: help setup dev down clean test lint format datasets datasets-quick datasets-offline \
+	load-validate benchmark-analyze ml-gates ml-version ml-pipeline
 
 help:
 	@echo "OBELISK Development Commands"
@@ -13,6 +14,11 @@ help:
 	@echo "make datasets-quick - Build a small local ML dataset bundle"
 	@echo "make datasets - Build a larger ML dataset bundle"
 	@echo "make datasets-offline - Rebuild processed files from local raw cache"
+	@echo "make load-validate - Run backend concurrency/load validation"
+	@echo "make benchmark-analyze - Benchmark /api/packages/analyze latency"
+	@echo "make ml-gates - Enforce ML acceptance thresholds"
+	@echo "make ml-version - Create versioned artifact manifest"
+	@echo "make ml-pipeline - Run train/eval/gate/version ML pipeline"
 
 setup:
 	@echo "Setting up OBELISK..."
@@ -55,3 +61,18 @@ datasets:
 
 datasets-offline:
 	python3 backend/ml_models/datasets/collect_and_prepare.py --offline-only
+
+load-validate:
+	cd backend && .venv311/bin/python scripts/load_validate.py --enforce
+
+benchmark-analyze:
+	cd backend && .venv311/bin/python scripts/benchmark_analyze.py --mode live
+
+ml-gates:
+	python3 backend/ml_models/train/check_model_gates.py
+
+ml-version:
+	python3 backend/ml_models/train/version_artifacts.py
+
+ml-pipeline:
+	python3 backend/ml_models/train/run_pipeline.py

@@ -1,0 +1,20 @@
+benchmark_source: backend/ml_models/saved_models/realistic_leaderboard.json
+
+thresholds:
+  codebert:
+    accuracy_min: 0.84
+    precision_min: 0.82
+    recall_min: 0.84
+    f1_min: 0.84
+
+  gnn:
+    accuracy_min: 0.62
+    precision_min: 0.62
+    recall_min: 0.95
+    f1_min: 0.76
+
+  isolation_forest:
+    accuracy_min: 0.54
+    precision_min: 0.72
+    recall_min: 0.48
+    f1_min: 0.59

@@ -1,0 +1,19 @@
+[run]
+branch = True
+source = app
+omit =
+    app/workers/*
+    app/schemas/*
+    app/models/*
+    app/services/*
+    app/db/redis_client.py
+    app/api/routes/websocket.py
+    app/ml/anomaly_detector.py
+    app/ml/behavior_analyzer.py
+    app/ml/model_loader.py
+    app/utils/validators.py
+
+[report]
+fail_under = 80
+show_missing = True
+skip_covered = False

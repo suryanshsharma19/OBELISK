@@ -1,0 +1,37 @@
+# ML Release Checklist
+
+This checklist enforces production readiness for OBELISK model releases.
+
+## 1. Training and Evaluation
+
+- [ ] Run full training pipeline:
+  - `python backend/ml_models/train/run_pipeline.py`
+- [ ] Confirm benchmark report updated:
+  - `backend/ml_models/saved_models/realistic_leaderboard.json`
+  - `backend/ml_models/saved_models/realistic_leaderboard.md`
+
+## 2. Acceptance Gates
+
+- [ ] Verify model gates pass:
+  - `python backend/ml_models/train/check_model_gates.py`
+- [ ] Ensure thresholds are tracked in:
+  - `backend/ml_models/train/model_acceptance_gates.yaml`
+
+## 3. Artifact Versioning and Auditability
+
+- [ ] Generate versioned artifact manifest:
+  - `python backend/ml_models/train/version_artifacts.py`
+- [ ] Confirm release metadata exists:
+  - `backend/ml_models/saved_models/releases/latest.json`
+  - `backend/ml_models/saved_models/releases/<release_id>/manifest.json`
+
+## 4. Runtime Validation
+
+- [ ] Verify runtime model loading through backend startup smoke tests.
+- [ ] Verify critical API paths return valid analysis responses.
+
+## 5. Operational Sign-off
+
+- [ ] Commit benchmark + manifest updates.
+- [ ] Attach benchmark summary and gate output to release PR.
+- [ ] Record regression notes and rollback artifact reference.

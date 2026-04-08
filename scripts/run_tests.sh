@@ -28,8 +28,10 @@ run_backend_tests() {
     -v \
     --tb=short \
     --cov=app \
+    --cov-config=.coveragerc \
     --cov-report=term-missing \
     --cov-report=html:htmlcov \
+    --cov-fail-under=80 \
     --asyncio-mode=auto || EXIT_CODE=1
 
   if [ "$EXIT_CODE" -eq 0 ]; then

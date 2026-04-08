@@ -6,12 +6,12 @@ from datetime import datetime, timezone
 from app.db.models import Alert, Package, RegistryType, ThreatLevel
 
 
-def _seed_alert(db, title="Test Alert", threat_level=ThreatLevel.high):
+def _seed_alert(db, title="Test Alert", threat_level=ThreatLevel.HIGH):
     """Helper: insert a package + linked alert, return alert id."""
     pkg = Package(
         name="evil-pkg", version="0.0.1",
-        registry=RegistryType.npm,
-        risk_score=80.0, threat_level=ThreatLevel.critical,
+        registry=RegistryType.NPM,
+        risk_score=80.0, threat_level=ThreatLevel.CRITICAL,
         is_malicious=True,
         analyzed_at=datetime.now(timezone.utc),
     )

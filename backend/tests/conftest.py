@@ -52,6 +52,31 @@ def client(db_session, engine):
     """Return a FastAPI TestClient with the test DB wired in."""
     from unittest.mock import patch
 
+    from app.api.dependencies import get_current_user, get_db
+    from app.main import app
+
+    def _override_get_db():
+        try:
+            yield db_session
+        finally:
+            pass
+
+    app.dependency_overrides[get_db] = _override_get_db
+    app.dependency_overrides[get_current_user] = lambda: {"sub": "test-user"}
+
+    # Patch the engine used in the lifespan so it doesn't try to connect
+    # to PostgreSQL; use the test SQLite engine instead.
+    with patch("app.db.session.engine", engine):
+        with TestClient(app) as tc:
+            yield tc
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def unauth_client(db_session, engine):
+    """Return a TestClient with DB override only (no auth override)."""
+    from unittest.mock import patch
+
     from app.api.dependencies import get_db
     from app.main import app
 
@@ -63,8 +88,6 @@ def client(db_session, engine):
 
     app.dependency_overrides[get_db] = _override_get_db
 
-    # Patch the engine used in the lifespan so it doesn't try to connect
-    # to PostgreSQL; use the test SQLite engine instead.
     with patch("app.db.session.engine", engine):
         with TestClient(app) as tc:
             yield tc

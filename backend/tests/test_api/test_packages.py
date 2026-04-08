@@ -20,9 +20,9 @@ def test_list_packages_returns_seeded(client, db_session):
     pkg = Package(
         name="express",
         version="4.18.0",
-        registry=RegistryType.npm,
+        registry=RegistryType.NPM,
         risk_score=12.5,
-        threat_level=ThreatLevel.low,
+        threat_level=ThreatLevel.LOW,
         is_malicious=False,
         analyzed_at=datetime.now(timezone.utc),
     )
@@ -38,12 +38,12 @@ def test_list_packages_returns_seeded(client, db_session):
 
 def test_list_packages_filter_threat_level(client, db_session):
     """Filter by threat_level should only return matching packages."""
-    for name, level in [("safe-pkg", ThreatLevel.safe), ("bad-pkg", ThreatLevel.high)]:
+    for name, level in [("safe-pkg", ThreatLevel.SAFE), ("bad-pkg", ThreatLevel.HIGH)]:
         db_session.add(
             Package(
                 name=name, version="1.0.0",
-                registry=RegistryType.npm,
-                risk_score=50 if level == ThreatLevel.high else 5,
+                registry=RegistryType.NPM,
+                risk_score=50 if level == ThreatLevel.HIGH else 5,
                 threat_level=level,
                 analyzed_at=datetime.now(timezone.utc),
             )
@@ -62,8 +62,8 @@ def test_list_packages_pagination(client, db_session):
         db_session.add(
             Package(
                 name=f"pkg-{i}", version="1.0.0",
-                registry=RegistryType.npm,
-                risk_score=0, threat_level=ThreatLevel.safe,
+                registry=RegistryType.NPM,
+                risk_score=0, threat_level=ThreatLevel.SAFE,
                 analyzed_at=datetime.now(timezone.utc),
             )
         )
