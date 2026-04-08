@@ -1,0 +1,8 @@
+bytes	human_size	path
+7966329079     7.5GiB .venv_local/lib
+25000 25KiB .venv_local/bin
+6659 6.6KiB .venv_local/share
+203 203B .venv_local/pyvenv.cfg
+69 69B .venv_local/.gitignore
+3 3B .venv_local/lib64
+0 0B .venv_local/include

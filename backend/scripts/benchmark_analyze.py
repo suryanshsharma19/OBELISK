@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+from contextlib import asynccontextmanager
 import os
 import sys
 import statistics
@@ -108,6 +109,13 @@ def run_stub_benchmark(args: argparse.Namespace) -> dict[str, float]:
         }
 
     original = analysis_service.analyze_package
+    original_lifespan_context = app.router.lifespan_context
+
+    @asynccontextmanager
+    async def _noop_lifespan(_app: Any):
+        yield
+
+    app.router.lifespan_context = _noop_lifespan
     analysis_service.analyze_package = _stub_analyze_package
     app.dependency_overrides[get_current_user] = lambda: {"sub": "benchmark-user"}
 
@@ -131,6 +139,7 @@ def run_stub_benchmark(args: argparse.Namespace) -> dict[str, float]:
                 latencies_ms.append((time.perf_counter() - t0) * 1000.0)
     finally:
         analysis_service.analyze_package = original
+        app.router.lifespan_context = original_lifespan_context
         app.dependency_overrides.clear()
 
     return {

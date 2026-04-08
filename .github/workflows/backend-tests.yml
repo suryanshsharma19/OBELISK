@@ -10,3 +10,5 @@ jobs:
           python-version: "3.11"
       - run: pip install -r backend/requirements-dev.txt
       - run: cd backend && pytest
+      - name: Enforce analyze latency SLO (stub)
+        run: cd backend && python scripts/benchmark_analyze.py --mode stub --samples 40 --warmup 10 --enforce-under-ms 250

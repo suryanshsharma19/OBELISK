@@ -1,0 +1,5 @@
+bytes	human_size	path
+19263841694       18GiB backend/ml_models/datasets/raw/pypi_packages
+2937000476     2.8GiB backend/ml_models/datasets/raw/npm_packages
+729168933    696MiB backend/ml_models/datasets/raw/repos
+144840496    139MiB backend/ml_models/datasets/raw/manual

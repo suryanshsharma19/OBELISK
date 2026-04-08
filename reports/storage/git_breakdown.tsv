@@ -1,0 +1,13 @@
+bytes	human_size	path
+2215751150     2.1GiB .git/objects
+30757 31KiB .git/index
+25827 26KiB .git/hooks
+21170 21KiB .git/logs
+429 429B .git/info
+384 384B .git/config
+161 161B .git/COMMIT_EDITMSG
+112 112B .git/refs
+103 103B .git/FETCH_HEAD
+73 73B .git/description
+41 41B .git/ORIG_HEAD
+21 21B .git/HEAD

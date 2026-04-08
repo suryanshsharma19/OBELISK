@@ -1,1 +1,245 @@
-# TODO: openapi spec
+openapi: 3.0.3
+info:
+	title: OBELISK API
+	version: 0.1.0
+	description: |
+		API contract for OBELISK supply-chain threat analysis backend.
+servers:
+	- url: http://localhost:8000
+tags:
+	- name: health
+	- name: auth
+	- name: packages
+	- name: alerts
+	- name: stats
+	- name: crawler
+paths:
+	/health:
+		get:
+			tags: [health]
+			summary: Health check
+			responses:
+				'200':
+					description: Service is healthy
+	/api/auth/login:
+		post:
+			tags: [auth]
+			summary: Login
+			requestBody:
+				required: true
+				content:
+					application/json:
+						schema:
+							type: object
+							required: [username, password]
+							properties:
+								username:
+									type: string
+								password:
+									type: string
+			responses:
+				'200':
+					description: Login successful
+	/api/auth/logout:
+		post:
+			tags: [auth]
+			summary: Logout
+			responses:
+				'200':
+					description: Logout successful
+	/api/auth/me:
+		get:
+			tags: [auth]
+			summary: Authenticated user info
+			security:
+				- bearerAuth: []
+			responses:
+				'200':
+					description: Current user
+	/api/packages/analyze:
+		post:
+			tags: [packages]
+			summary: Analyze package
+			security:
+				- bearerAuth: []
+			requestBody:
+				required: true
+				content:
+					application/json:
+						schema:
+							$ref: '#/components/schemas/AnalyzeRequest'
+			responses:
+				'200':
+					description: Analysis response
+	/api/packages/list:
+		get:
+			tags: [packages]
+			summary: List analyzed packages
+			security:
+				- bearerAuth: []
+			parameters:
+				- in: query
+					name: skip
+					schema: { type: integer, minimum: 0, default: 0 }
+				- in: query
+					name: limit
+					schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+				- in: query
+					name: threat_level
+					schema: { type: string }
+				- in: query
+					name: registry
+					schema: { type: string }
+				- in: query
+					name: sort
+					schema: { type: string, default: analyzed_at_desc }
+			responses:
+				'200':
+					description: Package list payload
+	/api/packages/{package_id}:
+		get:
+			tags: [packages]
+			summary: Package detail
+			security:
+				- bearerAuth: []
+			parameters:
+				- in: path
+					name: package_id
+					required: true
+					schema: { type: integer }
+			responses:
+				'200':
+					description: Package detail payload
+				'404':
+					description: Package not found
+	/api/alerts/:
+		get:
+			tags: [alerts]
+			summary: List alerts
+			security:
+				- bearerAuth: []
+			responses:
+				'200':
+					description: Alert list payload
+	/api/alerts/{alert_id}:
+		get:
+			tags: [alerts]
+			summary: Alert detail
+			security:
+				- bearerAuth: []
+			parameters:
+				- in: path
+					name: alert_id
+					required: true
+					schema: { type: integer }
+			responses:
+				'200':
+					description: Alert details
+		put:
+			tags: [alerts]
+			summary: Update alert status
+			security:
+				- bearerAuth: []
+			parameters:
+				- in: path
+					name: alert_id
+					required: true
+					schema: { type: integer }
+			responses:
+				'200':
+					description: Update acknowledgment
+	/api/alerts/bulk:
+		post:
+			tags: [alerts]
+			summary: Bulk alert action
+			security:
+				- bearerAuth: []
+			parameters:
+				- in: query
+					name: action
+					required: true
+					schema:
+						type: string
+						enum: [mark_read, resolve, report]
+			requestBody:
+				required: true
+				content:
+					application/json:
+						schema:
+							type: array
+							items:
+								type: integer
+			responses:
+				'200':
+					description: Bulk action result
+	/api/stats/overview:
+		get:
+			tags: [stats]
+			summary: Dashboard stats
+			security:
+				- bearerAuth: []
+			responses:
+				'200':
+					description: Overview metrics
+	/api/stats/trend:
+		get:
+			tags: [stats]
+			summary: Threat trend
+			security:
+				- bearerAuth: []
+			parameters:
+				- in: query
+					name: days
+					schema: { type: integer, minimum: 1, maximum: 90, default: 7 }
+			responses:
+				'200':
+					description: Trend metrics
+	/api/crawler/start:
+		post:
+			tags: [crawler]
+			summary: Start crawler
+			security:
+				- bearerAuth: []
+			responses:
+				'200':
+					description: Crawler started/already running
+	/api/crawler/stop:
+		post:
+			tags: [crawler]
+			summary: Stop crawler
+			security:
+				- bearerAuth: []
+			responses:
+				'200':
+					description: Crawler stopped/not running
+	/api/crawler/status:
+		get:
+			tags: [crawler]
+			summary: Crawler status
+			security:
+				- bearerAuth: []
+			responses:
+				'200':
+					description: Current crawler status
+components:
+	securitySchemes:
+		bearerAuth:
+			type: http
+			scheme: bearer
+			bearerFormat: JWT
+	schemas:
+		AnalyzeRequest:
+			type: object
+			required: [name, registry]
+			properties:
+				name:
+					type: string
+					example: express
+				version:
+					type: string
+					example: 4.18.2
+				registry:
+					type: string
+					enum: [npm, pypi]
+				code:
+					type: string

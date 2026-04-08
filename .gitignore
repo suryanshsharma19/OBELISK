@@ -138,3 +138,6 @@ SENTINEL_PROJECT_STRUCTURE.md
 *.orig
 tmp/
 temp/
+
+# Generated large storage report
+reports/storage/all_file_sizes.tsv

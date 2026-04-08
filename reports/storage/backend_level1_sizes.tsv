@@ -1,0 +1,15 @@
+bytes	human_size	path
+27199608319       26GiB backend/ml_models
+201947 198KiB backend/app
+29715 30KiB backend/logs
+26168 26KiB backend/tests
+12361 13KiB backend/scripts
+940 940B backend/.env.example
+638 638B backend/requirements.txt
+476 476B backend/Dockerfile
+356 356B backend/README.md
+230 230B backend/.dockerignore
+171 171B backend/pytest.ini
+167 167B backend/requirements-dev.txt
+117 117B backend/setup.py
+110 110B backend/alembic.ini

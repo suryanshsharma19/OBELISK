@@ -1,0 +1,11 @@
+bytes	human_size	path
+23074851599       22GiB backend/ml_models/datasets/raw
+344260538    329MiB backend/ml_models/datasets/processed
+58239 57KiB backend/ml_models/datasets/__pycache__
+38546 38KiB backend/ml_models/datasets/collect_and_prepare.py
+2672 2.7KiB backend/ml_models/datasets/README_DATASET_PIPELINE.md
+1593 1.6KiB backend/ml_models/datasets/dataset_manifest.json
+3 3B backend/ml_models/datasets/popular_packages.json
+3 3B backend/ml_models/datasets/malicious_code
+3 3B backend/ml_models/datasets/dependency_graphs
+3 3B backend/ml_models/datasets/benign_code

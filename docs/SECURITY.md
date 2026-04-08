@@ -42,7 +42,7 @@ OBELISK uses a layered security model aligned with the project bible:
 
 ## Deployment Hardening Checklist
 
-- Replace all REPLACE_WITH_* placeholders before deploy.
+- Replace all CHANGE_ME_* secret values before deploy.
 - Keep DEBUG disabled in non-local environments.
 - Set SECURE_COOKIES=true for HTTPS deployments.
 - Restrict CORS_ORIGINS to trusted frontend domains only.

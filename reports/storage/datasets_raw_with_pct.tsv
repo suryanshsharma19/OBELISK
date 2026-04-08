@@ -1,0 +1,5 @@
+bytes	human_size	percent_of_raw_datasets	path
+19263841694	18GiB	83.48%	backend/ml_models/datasets/raw/pypi_packages
+2937000476	2.8GiB	12.73%	backend/ml_models/datasets/raw/npm_packages
+729168933	696MiB	3.16%	backend/ml_models/datasets/raw/repos
+144840496	139MiB	0.63%	backend/ml_models/datasets/raw/manual

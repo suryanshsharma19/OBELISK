@@ -1,0 +1,5 @@
+bytes	human_size	percent_of_ml_models	path
+23419213199	22GiB	86.10%	backend/ml_models/datasets
+3780209025	3.6GiB	13.90%	backend/ml_models/saved_models
+185775	182KiB	0.00%	backend/ml_models/train
+320	320B	0.00%	backend/ml_models/notebooks
