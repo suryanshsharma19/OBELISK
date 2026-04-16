@@ -2,9 +2,232 @@ name: Deploy
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: "Deployment target"
+        required: true
+        type: choice
+        options:
+          - compose
+          - k8s
+        default: compose
+      image_tag:
+        description: "Optional immutable image tag override"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
 jobs:
-  deploy:
+  build-and-push:
     runs-on: ubuntu-latest
+    outputs:
+      backend_image: ${{ steps.meta.outputs.backend_image }}
+      frontend_image: ${{ steps.meta.outputs.frontend_image }}
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+      deploy_target: ${{ steps.meta.outputs.deploy_target }}
     steps:
       - uses: actions/checkout@v4
-      # TODO: add deployment steps
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve deployment metadata
+        id: meta
+        run: |
+          set -euo pipefail
+
+          OWNER_LC="${GITHUB_REPOSITORY_OWNER,,}"
+          IMAGE_TAG="${GITHUB_SHA}"
+          DEPLOY_TARGET="${{ vars.DEPLOY_TARGET }}"
+
+          if [[ -z "${DEPLOY_TARGET}" ]]; then
+            DEPLOY_TARGET="compose"
+          fi
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ -n "${{ inputs.deploy_target }}" ]]; then
+              DEPLOY_TARGET="${{ inputs.deploy_target }}"
+            fi
+            if [[ -n "${{ inputs.image_tag }}" ]]; then
+              IMAGE_TAG="${{ inputs.image_tag }}"
+            fi
+          fi
+
+          echo "image_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "deploy_target=${DEPLOY_TARGET}" >> "$GITHUB_OUTPUT"
+          echo "owner_lc=${OWNER_LC}" >> "$GITHUB_OUTPUT"
+          echo "backend_image=ghcr.io/${OWNER_LC}/obelisk-backend:${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "frontend_image=ghcr.io/${OWNER_LC}/obelisk-frontend:${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          file: backend/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.backend_image }}
+            ghcr.io/${{ steps.meta.outputs.owner_lc }}/obelisk-backend:latest
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          file: frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.frontend_image }}
+            ghcr.io/${{ steps.meta.outputs.owner_lc }}/obelisk-frontend:latest
+
+  deploy-compose:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: needs.build-and-push.outputs.deploy_target == 'compose'
+    steps:
+      - name: Validate compose deploy secrets
+        run: |
+          set -euo pipefail
+          test -n "${{ secrets.DEPLOY_SSH_HOST }}"
+          test -n "${{ secrets.DEPLOY_SSH_USER }}"
+          test -n "${{ secrets.DEPLOY_SSH_KEY }}"
+          test -n "${{ secrets.DEPLOY_PATH }}"
+          test -n "${{ secrets.DEPLOY_REGISTRY_USER }}"
+          test -n "${{ secrets.DEPLOY_REGISTRY_PASSWORD }}"
+
+      - name: Roll out compose stack
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_SSH_PORT || '22' }}
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.DEPLOY_PATH }}"
+
+            if [[ -d .git ]]; then
+              git fetch --all --prune
+              git checkout main
+              git pull --ff-only origin main
+            fi
+
+            echo "${{ secrets.DEPLOY_REGISTRY_PASSWORD }}" | docker login ghcr.io -u "${{ secrets.DEPLOY_REGISTRY_USER }}" --password-stdin
+
+            export BACKEND_IMAGE="${{ needs.build-and-push.outputs.backend_image }}"
+            export FRONTEND_IMAGE="${{ needs.build-and-push.outputs.frontend_image }}"
+
+            docker compose -f docker-compose.yml -f docker-compose.deploy.yml pull backend frontend
+            docker compose -f docker-compose.yml -f docker-compose.deploy.yml up -d --no-build postgres neo4j redis backend frontend
+            docker compose -f docker-compose.yml -f docker-compose.deploy.yml ps
+
+  deploy-k8s:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: needs.build-and-push.outputs.deploy_target == 'k8s'
+    env:
+      K8S_NAMESPACE: ${{ vars.K8S_NAMESPACE }}
+      K8S_BACKEND_DEPLOYMENT: ${{ vars.K8S_BACKEND_DEPLOYMENT }}
+      K8S_FRONTEND_DEPLOYMENT: ${{ vars.K8S_FRONTEND_DEPLOYMENT }}
+      K8S_BACKEND_CONTAINER: ${{ vars.K8S_BACKEND_CONTAINER }}
+      K8S_FRONTEND_CONTAINER: ${{ vars.K8S_FRONTEND_CONTAINER }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Configure kubeconfig
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.kube"
+          echo "${{ secrets.KUBE_CONFIG_B64 }}" | base64 -d > "$HOME/.kube/config"
+
+      - name: Roll out Kubernetes deployments
+        run: |
+          set -euo pipefail
+
+          NS="${K8S_NAMESPACE:-obelisk}"
+          BACKEND_DEPLOY="${K8S_BACKEND_DEPLOYMENT:-obelisk-backend}"
+          FRONTEND_DEPLOY="${K8S_FRONTEND_DEPLOYMENT:-obelisk-frontend}"
+          BACKEND_CONTAINER="${K8S_BACKEND_CONTAINER:-backend}"
+          FRONTEND_CONTAINER="${K8S_FRONTEND_CONTAINER:-frontend}"
+
+          kubectl -n "$NS" set image "deployment/${BACKEND_DEPLOY}" "${BACKEND_CONTAINER}=${{ needs.build-and-push.outputs.backend_image }}"
+          kubectl -n "$NS" set image "deployment/${FRONTEND_DEPLOY}" "${FRONTEND_CONTAINER}=${{ needs.build-and-push.outputs.frontend_image }}"
+
+          kubectl -n "$NS" rollout status "deployment/${BACKEND_DEPLOY}" --timeout=300s
+          kubectl -n "$NS" rollout status "deployment/${FRONTEND_DEPLOY}" --timeout=300s
+
+  smoke-checks:
+    runs-on: ubuntu-latest
+    needs:
+      - build-and-push
+      - deploy-compose
+      - deploy-k8s
+    if: |
+      always() &&
+      (needs.deploy-compose.result == 'success' || needs.deploy-compose.result == 'skipped') &&
+      (needs.deploy-k8s.result == 'success' || needs.deploy-k8s.result == 'skipped')
+    steps:
+      - name: Validate smoke-check secrets
+        run: |
+          set -euo pipefail
+          test -n "${{ secrets.DEPLOY_BASE_URL }}"
+
+      - name: Execute deployment smoke checks
+        env:
+          BASE_URL: ${{ secrets.DEPLOY_BASE_URL }}
+          SMOKE_AUTH_USERNAME: ${{ secrets.SMOKE_AUTH_USERNAME }}
+          SMOKE_AUTH_PASSWORD: ${{ secrets.SMOKE_AUTH_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          USERNAME="${SMOKE_AUTH_USERNAME:-admin}"
+          PASSWORD="${SMOKE_AUTH_PASSWORD:-change_me}"
+
+          curl -fsS "$BASE_URL/health" > /tmp/health.json
+          curl -fsS "$BASE_URL/health/ready" > /tmp/ready.json
+
+          TOKEN=$(curl -fsS -X POST "$BASE_URL/api/auth/login" \
+            -H "Content-Type: application/json" \
+            -d "{\"username\":\"${USERNAME}\",\"password\":\"${PASSWORD}\"}" \
+            | python -c 'import json,sys; print(json.load(sys.stdin)["access_token"])')
+
+          test -n "$TOKEN"
+
+          curl -fsS -H "Authorization: Bearer ${TOKEN}" "$BASE_URL/api/packages/list?limit=1" > /tmp/list.json
+
+          ANALYZE_RESPONSE=$(curl -fsS -X POST "$BASE_URL/api/packages/analyze" \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d '{"name":"deploy-smoke-pkg","version":"1.0.0","registry":"npm","code":"module.exports = () => 42;"}')
+
+          export ANALYZE_RESPONSE
+          python - <<'PY'
+          import json
+          import os
+
+          body = json.loads(os.environ["ANALYZE_RESPONSE"])
+          if "package" not in body or "analysis" not in body:
+              raise SystemExit("analyze smoke check failed: missing package/analysis payload")
+
+          print("Smoke analyze threat level:", body["analysis"].get("threat_level"))
+          PY
+
+      - name: Output deployed image refs
+        run: |
+          echo "Backend:  ${{ needs.build-and-push.outputs.backend_image }}"
+          echo "Frontend: ${{ needs.build-and-push.outputs.frontend_image }}"

@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  backend:
+    image: ${BACKEND_IMAGE:?BACKEND_IMAGE is required}
+    pull_policy: always
+    volumes: []
+    environment:
+      ENABLE_STARTUP_READINESS_CHECKS: "true"
+      STARTUP_CHECK_DEPENDENCIES: "true"
+      STRICT_STARTUP_CHECKS: "true"
+
+  frontend:
+    image: ${FRONTEND_IMAGE:?FRONTEND_IMAGE is required}
+    pull_policy: always
+    volumes: []
