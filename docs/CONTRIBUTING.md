@@ -28,11 +28,22 @@ npm test -- --watchAll=false
 npm run build
 ```
 
-Optional performance gate:
+Required backend runtime safety checks:
 
 ```bash
 cd backend
-python scripts/benchmark_analyze.py --mode stub --samples 40 --warmup 10 --enforce-under-ms 250
+python scripts/verify_runtime_security.py --strict
+python scripts/check_startup_readiness.py --strict --include-dependencies
+python scripts/smoke_endpoints.py
+```
+
+CI additionally enforces `python scripts/verify_runtime_security.py --strict --require-non-local`.
+
+Performance gate:
+
+```bash
+cd backend
+python scripts/benchmark_analyze.py --mode e2e --samples 40 --warmup 10 --enforce-under-ms 250
 ```
 
 ## Code Standards

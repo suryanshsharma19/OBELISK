@@ -14,6 +14,12 @@ CI/CD deployment automation is implemented in `.github/workflows/deploy.yml` and
 2. Rollout to either Compose (SSH target) or Kubernetes.
 3. Post-rollout smoke checks against production endpoints.
 
+Operational runbooks and ownership references:
+
+- `docs/OPERATIONS_RUNBOOK.md`
+- `docs/RELEASE_CHECKLIST.md`
+- `docs/SUPPORTABILITY.md`
+
 ## Docker Compose Deployment
 
 ```bash
@@ -202,3 +208,5 @@ At minimum:
 - Keep DB migrations backward compatible when feasible.
 - Maintain versioned ML artifact manifests and release pointers.
 - Roll back app and model versions together if detector behavior regresses.
+
+Detailed rollback procedures (application, model, and migration) are documented in `docs/OPERATIONS_RUNBOOK.md`.

@@ -54,6 +54,26 @@ Returns authenticated username:
 
 Public endpoint for health probes.
 
+### GET /health/ready
+
+Readiness endpoint used by deployment gates and probes.
+
+- Returns `200` when startup checks and runtime dependencies are ready.
+- Returns `503` when degraded.
+- Includes startup and runtime check payloads.
+
+### GET /health/worker
+
+Worker and queue health endpoint.
+
+- Returns `200` when worker is healthy.
+- Returns `503` when degraded.
+- Includes worker and queue observability snapshots.
+
+### GET /metrics
+
+Prometheus metrics endpoint for application and worker telemetry.
+
 ## Package Analysis
 
 ### POST /api/packages/analyze

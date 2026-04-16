@@ -41,6 +41,11 @@ Latest validated release at time of this update:
 - [x] Attach benchmark summary and gate output to release PR.
 - [x] Record regression notes and rollback artifact reference.
 
+Release sign-off ownership and final go/no-go criteria are tracked in:
+
+- `docs/RELEASE_CHECKLIST.md`
+- `docs/SUPPORTABILITY.md`
+
 ## Sign-off Notes
 
 - Model gates run result: all configured thresholds passed.

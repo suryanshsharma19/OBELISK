@@ -55,3 +55,5 @@ OBELISK uses a layered security model aligned with the project bible:
 - Rotate SECRET_KEY and auth credentials after any suspected compromise.
 - Revoke active sessions by rotating SECRET_KEY.
 - Review logs and alerts for unusual authentication failure spikes.
+- Follow incident severity, escalation windows, and owner handoff defined in `docs/SUPPORTABILITY.md`.
+- Execute incident containment and recovery steps from `docs/OPERATIONS_RUNBOOK.md`.

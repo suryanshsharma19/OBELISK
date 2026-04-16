@@ -28,6 +28,7 @@ OBELISK is an AI-assisted software supply chain security platform focused on det
 - [Testing](#testing)
 - [ML Operations](#ml-operations)
 - [Deployment](#deployment)
+- [Operations and Supportability](#operations-and-supportability)
 - [Security and Configuration Notes](#security-and-configuration-notes)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
@@ -264,6 +265,15 @@ Deployment paths are available for:
 
 Deployment guide: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
+## Operations and Supportability
+
+Operational runbooks and ownership references:
+
+- [Operations Runbook](docs/OPERATIONS_RUNBOOK.md)
+- [Supportability (SLOs, On-Call, Escalation)](docs/SUPPORTABILITY.md)
+- [Release Checklist (Sign-off Owner)](docs/RELEASE_CHECKLIST.md)
+- [Release Notes](docs/RELEASE_NOTES.md)
+
 ## Security and Configuration Notes
 
 - Default credentials and secrets in example env files are for local development only.
@@ -280,6 +290,10 @@ Security reference: [docs/SECURITY.md](docs/SECURITY.md)
 - [Contributing Guide](docs/CONTRIBUTING.md)
 - [Deployment Guide](docs/DEPLOYMENT.md)
 - [Security Guide](docs/SECURITY.md)
+- [Operations Runbook](docs/OPERATIONS_RUNBOOK.md)
+- [Supportability Guide](docs/SUPPORTABILITY.md)
+- [Release Checklist](docs/RELEASE_CHECKLIST.md)
+- [Release Notes](docs/RELEASE_NOTES.md)
 
 ## Contributing
 

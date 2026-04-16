@@ -48,11 +48,34 @@ npm test -- --watchAll=false
 ## Quality Gates
 
 - Backend test coverage threshold: 80%.
-- Benchmark gate:
+- Security baseline gate (non-local hardening):
 
 ```bash
 cd backend
-python scripts/benchmark_analyze.py --mode stub --samples 40 --warmup 10 --enforce-under-ms 250
+python scripts/verify_runtime_security.py --strict
+```
+
+CI uses `--require-non-local` with `ENVIRONMENT=production`.
+
+- Startup readiness gate:
+
+```bash
+cd backend
+python scripts/check_startup_readiness.py --strict --include-dependencies
+```
+
+- Endpoint smoke gate:
+
+```bash
+cd backend
+python scripts/smoke_endpoints.py
+```
+
+- Analyze latency benchmark gate:
+
+```bash
+cd backend
+python scripts/benchmark_analyze.py --mode e2e --samples 40 --warmup 10 --enforce-under-ms 250
 ```
 
 - Optional load validation against a running backend:
