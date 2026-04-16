@@ -151,9 +151,130 @@ def run_stub_benchmark(args: argparse.Namespace) -> dict[str, float]:
     }
 
 
+def run_e2e_benchmark(args: argparse.Namespace) -> dict[str, float]:
+    from fastapi.testclient import TestClient
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    from app.api.dependencies import get_current_user, get_db
+    from app.db.base import Base
+    from app.main import app
+    from app.services import analysis_service
+
+    db_path = BACKEND_ROOT / ".tmp_benchmark_e2e.db"
+    if db_path.exists():
+        db_path.unlink()
+
+    engine = create_engine(
+        f"sqlite:///{db_path}",
+        connect_args={"check_same_thread": False},
+    )
+    TestSession = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    Base.metadata.create_all(bind=engine)
+
+    def _override_get_db():
+        db = TestSession()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    async def _fake_fetch_metadata(name: str, version: str, registry: str) -> dict[str, Any]:
+        return {
+            "name": name,
+            "version": version,
+            "registry": registry,
+            "author": {
+                "email": "bench@example.com",
+                "account_age_days": 400,
+                "total_packages": 10,
+                "has_verified_email": True,
+                "github_repos": 4,
+                "previous_downloads": 100,
+            },
+            "dependencies": {"dep-a": "1.0.0", "dep-b": "2.0.0"},
+            "scripts": {"postinstall": "echo setup"},
+        }
+
+    async def _fake_gnn_query(_package_name: str) -> dict[str, Any]:
+        return {
+            "available": False,
+            "transitive_malicious": 0,
+            "total_transitive": 0,
+            "max_depth": 1,
+        }
+
+    original_lifespan_context = app.router.lifespan_context
+    original_fetch = analysis_service._fetch_metadata
+    original_get_cached = analysis_service._get_cached_result
+    original_set_cached = analysis_service._cache_result
+    original_persist_graph = analysis_service._persist_to_neo4j
+    original_gnn_query = analysis_service._gnn._query_neo4j
+
+    @asynccontextmanager
+    async def _noop_lifespan(_app: Any):
+        yield
+
+    app.router.lifespan_context = _noop_lifespan
+    analysis_service._fetch_metadata = _fake_fetch_metadata
+    analysis_service._get_cached_result = lambda _key: None
+    analysis_service._cache_result = lambda _key, _data: None
+    analysis_service._persist_to_neo4j = lambda *args, **kwargs: None
+    analysis_service._gnn._query_neo4j = _fake_gnn_query
+    app.dependency_overrides[get_current_user] = lambda: {"sub": "benchmark-user"}
+    app.dependency_overrides[get_db] = _override_get_db
+
+    latencies_ms: list[float] = []
+    payload = {
+        "name": args.package_name,
+        "version": args.package_version,
+        "registry": args.registry,
+        "code": args.code,
+    }
+
+    try:
+        with TestClient(app) as client:
+            for i in range(args.warmup):
+                warm_payload = {
+                    **payload,
+                    "version": f"{args.package_version}-warmup-{i}",
+                }
+                resp = client.post("/api/packages/analyze", json=warm_payload)
+                assert resp.status_code == 200
+
+            for i in range(args.samples):
+                sample_payload = {
+                    **payload,
+                    "version": f"{args.package_version}-sample-{i}",
+                }
+                t0 = time.perf_counter()
+                resp = client.post("/api/packages/analyze", json=sample_payload)
+                assert resp.status_code == 200, resp.text
+                latencies_ms.append((time.perf_counter() - t0) * 1000.0)
+    finally:
+        analysis_service._fetch_metadata = original_fetch
+        analysis_service._get_cached_result = original_get_cached
+        analysis_service._cache_result = original_set_cached
+        analysis_service._persist_to_neo4j = original_persist_graph
+        analysis_service._gnn._query_neo4j = original_gnn_query
+        app.router.lifespan_context = original_lifespan_context
+        app.dependency_overrides.clear()
+        engine.dispose()
+        if db_path.exists():
+            db_path.unlink()
+
+    return {
+        "p50_ms": percentile(latencies_ms, 0.50),
+        "p95_ms": percentile(latencies_ms, 0.95),
+        "p99_ms": percentile(latencies_ms, 0.99),
+        "avg_ms": statistics.mean(latencies_ms),
+        "samples": float(len(latencies_ms)),
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Benchmark /api/packages/analyze")
-    parser.add_argument("--mode", choices=["live", "stub"], default="live")
+    parser.add_argument("--mode", choices=["live", "stub", "e2e"], default="live")
     parser.add_argument("--base-url", default="http://127.0.0.1:8000")
     parser.add_argument("--username", default=os.getenv("AUTH_USERNAME", "admin"))
     parser.add_argument("--password", default=os.getenv("AUTH_PASSWORD", "change_me"))
@@ -173,6 +294,8 @@ async def main() -> int:
 
     if args.mode == "live":
         metrics = await run_live_benchmark(args)
+    elif args.mode == "e2e":
+        metrics = run_e2e_benchmark(args)
     else:
         metrics = run_stub_benchmark(args)
 

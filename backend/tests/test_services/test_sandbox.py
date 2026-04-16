@@ -7,26 +7,28 @@ from app.services.sandbox import run_in_sandbox
 
 @pytest.mark.asyncio
 async def test_simulation_returns_expected_keys():
-    """Simulated sandbox should return all required telemetry keys."""
+    """Scoped sandbox response should include telemetry and scope metadata."""
     result = await run_in_sandbox("test-pkg", "1.0.0", "npm")
     expected_keys = {
         "network_attempts", "file_writes", "cpu_usage_percent",
         "memory_usage_mb", "process_spawns", "exit_code",
-        "execution_time_s", "mode", "logs",
+        "execution_time_s", "mode", "logs", "enabled",
+        "release_track", "reason",
     }
     assert expected_keys.issubset(result.keys())
 
 
 @pytest.mark.asyncio
 async def test_simulation_mode_label():
-    """Mode should be 'simulation' when Docker is unavailable."""
+    """Mode should indicate explicit v1.1 scope when disabled."""
     result = await run_in_sandbox("any-pkg", "1.0.0", "npm")
-    assert result["mode"] == "simulation"
+    assert result["mode"] == "scoped_v1_1"
+    assert result["enabled"] is False
 
 
 @pytest.mark.asyncio
 async def test_simulation_safe_defaults():
-    """Simulated sandbox should report safe / neutral metrics."""
+    """Scoped sandbox should report neutral metrics and no side effects."""
     result = await run_in_sandbox("safe-pkg", "2.0.0", "pypi")
     assert result["network_attempts"] == 0
     assert result["file_writes"] == 0

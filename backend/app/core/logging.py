@@ -12,26 +12,37 @@ except ImportError:
     _HAS_COLORLOG = False
 
 from app.config import get_settings
+from app.core.request_context import get_request_id
 
 LOG_DIR = Path("logs")
 LOG_DIR.mkdir(exist_ok=True)
 
-LOG_FORMAT = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
+LOG_FORMAT = "%(asctime)s | %(levelname)-8s | %(name)s | req=%(request_id)s | %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 JSON_FORMAT = (
     '{"timestamp":"%(asctime)s","level":"%(levelname)s",'
-    '"logger":"%(name)s","message":"%(message)s"}'
+    '"logger":"%(name)s","request_id":"%(request_id)s",'
+    '"message":"%(message)s"}'
 )
 
 COLOR_FORMAT = (
     "%(log_color)s%(asctime)s | %(levelname)-8s%(reset)s | "
-    "%(cyan)s%(name)s%(reset)s | %(message)s"
+    "%(cyan)s%(name)s%(reset)s | req=%(request_id)s | %(message)s"
 )
+
+
+class RequestContextFilter(logging.Filter):
+    """Inject request_id from context vars so every log line is traceable."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        record.request_id = get_request_id()
+        return True
 
 
 def _get_console_handler(debug: bool) -> logging.Handler:
     handler = logging.StreamHandler(sys.stderr)
+    handler.addFilter(RequestContextFilter())
 
     if debug and _HAS_COLORLOG:
         formatter = colorlog.ColoredFormatter(
@@ -61,6 +72,7 @@ def _get_file_handler() -> logging.Handler:
         backupCount=5,
         encoding="utf-8",
     )
+    handler.addFilter(RequestContextFilter())
     handler.setFormatter(logging.Formatter(LOG_FORMAT, datefmt=DATE_FORMAT))
     return handler
 

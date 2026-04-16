@@ -39,11 +39,17 @@ def is_safe_redirect_url(url: str) -> bool:
         return False
     if url.startswith("/") and not url.startswith("//"):
         return True
-    # Allow our own frontend
-    trusted_origins = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
+
+    configured_origins = [
+        o.strip() for o in settings.cors_origins.split(",") if o.strip()
     ]
+    if settings.environment == "local":
+        configured_origins.extend([
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        ])
+
+    trusted_origins = list(dict.fromkeys(configured_origins))
     return any(url.startswith(origin) for origin in trusted_origins)
 
 
@@ -79,4 +85,13 @@ class RateLimiter:
             self._store.clear()
 
 
-rate_limiter = RateLimiter()
+_default_rate_limit = (
+    settings.rate_limit_max_requests_local
+    if settings.environment == "local"
+    else settings.rate_limit_max_requests_non_local
+)
+
+rate_limiter = RateLimiter(
+    max_requests=_default_rate_limit,
+    window_seconds=settings.rate_limit_window_seconds,
+)

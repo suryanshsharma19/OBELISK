@@ -8,6 +8,10 @@ from app.core.security import (
     is_safe_redirect_url,
     verify_api_key,
 )
+from app.config import get_settings
+
+
+settings = get_settings()
 
 
 def test_api_key_hash_and_verify_roundtrip():
@@ -28,7 +32,12 @@ def test_generate_secret_token_has_entropy():
 
 def test_safe_redirect_url_allows_local_paths_and_known_origin():
     assert is_safe_redirect_url("/dashboard") is True
-    assert is_safe_redirect_url("http://localhost:3000/alerts") is True
+
+    localhost_allowed = settings.environment == "local" or (
+        "http://localhost:3000" in settings.cors_origins
+    )
+    assert is_safe_redirect_url("http://localhost:3000/alerts") is localhost_allowed
+
     assert is_safe_redirect_url("http://evil.example/steal") is False
     assert is_safe_redirect_url("//evil.example") is False
 

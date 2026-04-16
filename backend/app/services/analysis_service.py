@@ -3,13 +3,20 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any, Awaitable, Optional
 
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import AnalysisError
 from app.core.logging import setup_logger
+from app.core.observability import (
+    mark_analysis_cache_error,
+    mark_analysis_cache_hit,
+    mark_analysis_cache_miss,
+    observe_detector,
+)
 from app.db import models as orm
 from app.models.analysis import AnalysisResult, DetectionResult
 from app.ml.anomaly_detector import AnomalyDetector
@@ -41,9 +48,17 @@ async def analyze_package(
 
     # check cache
     cache_key = f"analysis:{registry}:{name}:{version}"
-    cached = _get_cached_result(cache_key)
+    cached, cache_outcome = _get_cached_result(cache_key)
+    if cache_outcome == "hit":
+        mark_analysis_cache_hit()
+    elif cache_outcome == "miss":
+        mark_analysis_cache_miss()
+    else:
+        mark_analysis_cache_error()
+
     if cached is not None:
         logger.info("Cache hit for %s", cache_key)
+        await _emit_analysis_events(cached, from_cache=True)
         return cached
 
     # fetch registry metadata
@@ -62,16 +77,19 @@ async def analyze_package(
     # run all detectors in parallel
     try:
         typo_res, code_res, behav_res, anomaly_res, gnn_res = await asyncio.gather(
-            _typosquat.run(package_name=name),
-            _code_analyzer.run(code=code or ""),
-            _behavior.run(
+            _run_detector("typosquatting", _typosquat.run(package_name=name)),
+            _run_detector("code_analysis", _code_analyzer.run(code=code or "")),
+            _run_detector(
+                "behavior",
+                _behavior.run(
                 package_name=name,
                 registry=registry,
                 metadata=metadata,
                 code=code or "",
             ),
-            _anomaly.run(maintainer_data=maintainer_data),
-            _gnn.run(package_name=name, dependencies=dependencies),
+            ),
+            _run_detector("maintainer", _anomaly.run(maintainer_data=maintainer_data)),
+            _run_detector("dependency", _gnn.run(package_name=name, dependencies=dependencies)),
         )
     except Exception as exc:
         logger.error("Detector pipeline failed: %s", exc)
@@ -102,6 +120,8 @@ async def analyze_package(
     response = _build_response(package_row, analysis, detection_results)
     _cache_result(cache_key, response)
 
+    await _emit_analysis_events(response, from_cache=False)
+
     # alert if critical
     if analysis.threat_level in ("high", "critical"):
         _create_alert(db, package_row, analysis)
@@ -120,6 +140,17 @@ async def _fetch_metadata(name: str, version: str, registry: str) -> dict[str, A
     except Exception as exc:
         logger.warning("Could not fetch registry metadata for %s: %s", name, exc)
         return {}
+
+
+async def _run_detector(name: str, detector_coro: Awaitable[DetectionResult]) -> DetectionResult:
+    started = time.perf_counter()
+    try:
+        result = await detector_coro
+        observe_detector(name, time.perf_counter() - started, failed=False)
+        return result
+    except Exception:
+        observe_detector(name, time.perf_counter() - started, failed=True)
+        raise
 
 
 def _extract_maintainer(metadata: dict[str, Any]) -> dict[str, Any]:
@@ -235,12 +266,15 @@ def _persist_to_neo4j(
         logger.warning("Neo4j persistence skipped: %s", exc)
 
 
-def _get_cached_result(key: str) -> Optional[dict[str, Any]]:
+def _get_cached_result(key: str) -> tuple[Optional[dict[str, Any]], str]:
     try:
         from app.db.redis_client import redis_client
-        return redis_client.get_json(key)
+        cached = redis_client.get_json(key)
+        if cached is None:
+            return None, "miss"
+        return cached, "hit"
     except Exception:
-        return None
+        return None, "error"
 
 
 def _cache_result(key: str, data: dict[str, Any]) -> None:
@@ -303,3 +337,22 @@ def _build_response(
             for name, result in detection_results.items()
         },
     }
+
+
+async def _emit_analysis_events(response: dict[str, Any], from_cache: bool) -> None:
+    payload = {
+        "package": response.get("package", {}),
+        "analysis": response.get("analysis", {}),
+        "from_cache": from_cache,
+    }
+
+    try:
+        from app.api.routes.websocket import manager
+
+        await manager.broadcast("analysis_complete", payload)
+
+        threat_level = str(payload["analysis"].get("threat_level", "")).lower()
+        if threat_level in {"high", "critical"}:
+            await manager.broadcast("threat_detected", payload)
+    except Exception as exc:
+        logger.warning("WebSocket broadcast skipped: %s", exc)

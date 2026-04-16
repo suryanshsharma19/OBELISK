@@ -9,6 +9,7 @@ import httpx
 
 from app.config import get_settings
 from app.core.logging import setup_logger
+from app.core.observability import record_crawler_batch
 from app.workers.celery_app import celery_app
 
 logger = setup_logger(__name__)
@@ -64,7 +65,9 @@ def crawl_registry_task(registry: str = "npm", batch_size: int = 50):
         }
 
     queued = 0
+    duplicates_skipped = 0
     failures: list[dict[str, str]] = []
+    seen_keys: set[tuple[str, str]] = set()
 
     for package in candidates:
         name = package.get("name")
@@ -72,11 +75,23 @@ def crawl_registry_task(registry: str = "npm", batch_size: int = 50):
         if not name:
             continue
 
+        dedupe_key = (name, version)
+        if dedupe_key in seen_keys:
+            duplicates_skipped += 1
+            continue
+        seen_keys.add(dedupe_key)
+
         try:
             analyze_package_task.delay(name=name, version=version, registry=registry)
             queued += 1
         except Exception as exc:
             failures.append({"name": name, "error": str(exc)})
+
+    record_crawler_batch(
+        queued=queued,
+        failed=len(failures),
+        duplicates_skipped=duplicates_skipped,
+    )
 
     logger.info(
         "Crawl complete for %s. queued=%d failed=%d",
@@ -91,6 +106,7 @@ def crawl_registry_task(registry: str = "npm", batch_size: int = 50):
         "status": "completed",
         "queued": queued,
         "failed": len(failures),
+        "duplicates_skipped": duplicates_skipped,
         "failures": failures[:10],
     }
 

@@ -1,7 +1,9 @@
 """FastAPI application entry point."""
 
 from contextlib import asynccontextmanager
+import time
 from typing import AsyncGenerator
+from uuid import uuid4
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,9 +12,39 @@ from fastapi.responses import JSONResponse
 from app.config import get_settings
 from app.core.exceptions import ObeliskException
 from app.core.logging import setup_logger
+from app.core.observability import (
+    HTTP_REQUESTS_IN_PROGRESS,
+    observe_http_request,
+)
+from app.core.request_context import reset_request_id, set_request_id
 
 logger = setup_logger(__name__)
 settings = get_settings()
+
+
+def _resolve_cors_origins() -> list[str]:
+    origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
+
+    if settings.environment == "local" or settings.allow_localhost_cors_in_non_local:
+        return origins
+
+    blocked_prefixes = (
+        "http://localhost",
+        "http://127.0.0.1",
+        "https://localhost",
+        "https://127.0.0.1",
+    )
+    filtered = [
+        origin for origin in origins
+        if not origin.startswith(blocked_prefixes)
+    ]
+
+    if not filtered:
+        raise RuntimeError(
+            "Non-local runtime requires at least one non-local CORS origin.",
+        )
+
+    return filtered
 
 
 @asynccontextmanager
@@ -22,9 +54,23 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     from app.db.session import engine
     from app.db.base import Base
+    from app.core.readiness import run_startup_readiness_or_raise
 
     Base.metadata.create_all(bind=engine)
     logger.info("Database tables verified/created")
+
+    if settings.enable_startup_readiness_checks:
+        app.state.startup_readiness = run_startup_readiness_or_raise(
+            strict=settings.strict_startup_checks,
+            include_dependencies=settings.startup_check_dependencies,
+        )
+    else:
+        app.state.startup_readiness = {
+            "status": "skipped",
+            "ready": True,
+            "checks": {},
+            "failures": [],
+        }
 
     yield
 
@@ -46,11 +92,44 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in settings.cors_origins.split(",") if o.strip()],
+    allow_origins=_resolve_cors_origins(),
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
 )
+
+
+@app.middleware("http")
+async def add_request_observability(request: Request, call_next):
+    request_id = request.headers.get("x-request-id") or str(uuid4())
+    token = set_request_id(request_id)
+
+    method = request.method.upper()
+    path = request.url.path
+    in_flight = HTTP_REQUESTS_IN_PROGRESS.labels(method, path)
+    in_flight.inc()
+
+    started = time.perf_counter()
+    response = None
+    status_code = 500
+
+    try:
+        response = await call_next(request)
+        status_code = response.status_code
+        response.headers["X-Request-ID"] = request_id
+        return response
+    finally:
+        duration_seconds = max(time.perf_counter() - started, 0.0)
+        observe_http_request(method, path, status_code, duration_seconds)
+        in_flight.dec()
+        logger.info(
+            "request_complete method=%s path=%s status=%s duration_ms=%.2f",
+            method,
+            path,
+            status_code,
+            duration_seconds * 1000,
+        )
+        reset_request_id(token)
 
 
 @app.middleware("http")

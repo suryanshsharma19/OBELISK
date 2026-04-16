@@ -17,7 +17,30 @@ async def run_in_sandbox(
     version: str,
     registry: str = "npm",
 ) -> dict[str, Any]:
-    # simulation mode for now (no Docker dependency)
+    if not settings.sandbox_enabled:
+        logger.info(
+            "Sandbox disabled for current release; scoped to %s and excluded from critical scoring flow",
+            settings.sandbox_release_track,
+        )
+        return {
+            "network_attempts": 0,
+            "file_writes": 0,
+            "cpu_usage_percent": 0.0,
+            "memory_usage_mb": 0.0,
+            "process_spawns": 0,
+            "exit_code": 0,
+            "execution_time_s": 0.0,
+            "mode": "scoped_v1_1",
+            "logs": [],
+            "enabled": False,
+            "release_track": settings.sandbox_release_track,
+            "reason": "Sandbox is scoped to v1.1 and not part of current critical scoring",
+        }
+
+    if settings.sandbox_allow_docker:
+        logger.info("Sandbox (docker): %s@%s registry=%s", package_name, version, registry)
+        return await _docker_sandbox(package_name, version, registry)
+
     logger.info(
         "Sandbox (sim): %s@%s registry=%s",
         package_name, version, registry,
