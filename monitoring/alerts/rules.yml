@@ -25,6 +25,34 @@ groups:
           summary: "Backend 5xx error ratio is high"
           description: "More than 5% of backend responses are 5xx for 10 minutes."
 
+      - alert: BackendErrorBudgetBurnFast
+        expr: |
+          sum(rate(http_requests_total{job="obelisk-backend",status=~"5.."}[5m]))
+          /
+          clamp_min(sum(rate(http_requests_total{job="obelisk-backend"}[5m])), 1)
+          > 0.02
+        for: 5m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "Backend error budget burn is too fast"
+          description: "5xx ratio exceeded 2% over 5m, indicating accelerated error budget burn."
+
+      - alert: BackendErrorBudgetBurnSlow
+        expr: |
+          sum(rate(http_requests_total{job="obelisk-backend",status=~"5.."}[1h]))
+          /
+          clamp_min(sum(rate(http_requests_total{job="obelisk-backend"}[1h])), 1)
+          > 0.01
+        for: 30m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Backend error budget burn is elevated"
+          description: "5xx ratio exceeded 1% over 1h."
+
       - alert: BackendHighLatencyP95
         expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="obelisk-backend"}[5m])) by (le)) > 1
         for: 10m
@@ -34,6 +62,50 @@ groups:
         annotations:
           summary: "Backend latency p95 above 1s"
           description: "95th percentile backend latency has exceeded 1 second for 10 minutes."
+
+      - alert: DetectorFailureSpike
+        expr: sum(rate(detector_failures_total{job="obelisk-backend"}[10m])) > 0.05
+        for: 15m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Detector failures are spiking"
+          description: "At least one detector is failing repeatedly over 10 minutes."
+
+      - alert: CacheHitRateLow
+        expr: |
+          sum(rate(analysis_cache_requests_total{job="obelisk-backend",outcome="hit"}[15m]))
+          /
+          clamp_min(sum(rate(analysis_cache_requests_total{job="obelisk-backend",outcome=~"hit|miss"}[15m])), 1)
+          < 0.40
+        for: 20m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Analysis cache hit rate is low"
+          description: "Cache hit ratio has dropped below 40% for 20 minutes."
+
+      - alert: WorkerUnavailable
+        expr: max_over_time(worker_health_status{job="obelisk-backend",worker="celery"}[5m]) < 1
+        for: 10m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Celery worker is unavailable"
+          description: "Worker health metric indicates no healthy Celery workers for 10 minutes."
+
+      - alert: WorkerQueueBacklogHigh
+        expr: max_over_time(celery_queue_backlog{job="obelisk-backend",queue="celery"}[10m]) > 100
+        for: 15m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Celery queue backlog is high"
+          description: "Celery queue depth has stayed above 100 for 15 minutes."
 
       - alert: BackendMemoryPressure
         expr: process_resident_memory_bytes{job="obelisk-backend"} > 1.2e+09

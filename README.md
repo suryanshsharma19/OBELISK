@@ -24,6 +24,7 @@ OBELISK is an AI-assisted software supply chain security platform focused on det
 - [Quick Start (Docker Compose)](#quick-start-docker-compose)
 - [Local Development](#local-development)
 - [API Surface](#api-surface)
+- [Observability and Monitoring](#observability-and-monitoring)
 - [Testing](#testing)
 - [ML Operations](#ml-operations)
 - [Deployment](#deployment)
@@ -199,6 +200,27 @@ Core routes exposed by the backend include:
 - `WS /ws` real-time event stream
 
 See [docs/API.md](docs/API.md) and [docs/api/openapi.yaml](docs/api/openapi.yaml) for details.
+
+## Observability and Monitoring
+
+Runtime observability endpoints exposed by the backend:
+
+- `GET /health` liveness and startup-readiness status
+- `GET /health/ready` readiness gate (returns `503` when degraded)
+- `GET /health/worker` Celery worker + queue health snapshot
+- `GET /metrics` Prometheus metrics endpoint
+
+Monitoring assets live under `monitoring/`:
+
+- Prometheus scrape + rules: `monitoring/prometheus/prometheus.yml`
+- Alert rules: `monitoring/alerts/rules.yml`
+- Grafana dashboards: `monitoring/grafana/dashboards/application.json` and `monitoring/grafana/dashboards/system.json`
+- Grafana dashboard provisioning: `monitoring/grafana/provisioning/dashboards.yaml`
+
+When running the infrastructure compose stack (`infrastructure/docker/docker-compose.yml`), dashboards are provisioned by mounting:
+
+- `monitoring/grafana/provisioning` -> `/etc/grafana/provisioning`
+- `monitoring/grafana/dashboards` -> `/var/lib/grafana/dashboards`
 
 ## Testing
 

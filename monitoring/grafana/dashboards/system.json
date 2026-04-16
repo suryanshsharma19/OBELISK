@@ -1,1 +1,258 @@
-{}
+{
+	"annotations": {
+		"list": []
+	},
+	"editable": true,
+	"fiscalYearStartMonth": 0,
+	"graphTooltip": 0,
+	"id": null,
+	"links": [],
+	"panels": [
+		{
+			"datasource": "Prometheus",
+			"fieldConfig": {
+				"defaults": {
+					"max": 1,
+					"min": 0,
+					"unit": "none"
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 5,
+				"w": 6,
+				"x": 0,
+				"y": 0
+			},
+			"id": 1,
+			"options": {
+				"colorMode": "value",
+				"graphMode": "none",
+				"justifyMode": "center",
+				"orientation": "auto",
+				"reduceOptions": {
+					"calcs": [
+						"lastNotNull"
+					],
+					"fields": "",
+					"values": false
+				},
+				"textMode": "auto"
+			},
+			"targets": [
+				{
+					"expr": "worker_health_status{job=\"obelisk-backend\",worker=\"celery\"}",
+					"legendFormat": "worker health",
+					"refId": "A"
+				}
+			],
+			"title": "Worker Health",
+			"type": "stat"
+		},
+		{
+			"datasource": "Prometheus",
+			"fieldConfig": {
+				"defaults": {
+					"unit": "short"
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 5,
+				"w": 6,
+				"x": 6,
+				"y": 0
+			},
+			"id": 2,
+			"options": {
+				"colorMode": "value",
+				"graphMode": "none",
+				"justifyMode": "center",
+				"orientation": "auto",
+				"reduceOptions": {
+					"calcs": [
+						"lastNotNull"
+					],
+					"fields": "",
+					"values": false
+				},
+				"textMode": "auto"
+			},
+			"targets": [
+				{
+					"expr": "celery_queue_backlog{job=\"obelisk-backend\",queue=\"celery\"}",
+					"legendFormat": "queue depth",
+					"refId": "A"
+				}
+			],
+			"title": "Queue Backlog",
+			"type": "stat"
+		},
+		{
+			"datasource": "Prometheus",
+			"fieldConfig": {
+				"defaults": {
+					"unit": "bytes"
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 5,
+				"w": 6,
+				"x": 12,
+				"y": 0
+			},
+			"id": 3,
+			"options": {
+				"colorMode": "value",
+				"graphMode": "none",
+				"justifyMode": "center",
+				"orientation": "auto",
+				"reduceOptions": {
+					"calcs": [
+						"lastNotNull"
+					],
+					"fields": "",
+					"values": false
+				},
+				"textMode": "auto"
+			},
+			"targets": [
+				{
+					"expr": "process_resident_memory_bytes{job=\"obelisk-backend\"}",
+					"legendFormat": "RSS",
+					"refId": "A"
+				}
+			],
+			"title": "Backend RSS Memory",
+			"type": "stat"
+		},
+		{
+			"datasource": "Prometheus",
+			"fieldConfig": {
+				"defaults": {
+					"unit": "short"
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 5,
+				"w": 6,
+				"x": 18,
+				"y": 0
+			},
+			"id": 4,
+			"options": {
+				"colorMode": "value",
+				"graphMode": "none",
+				"justifyMode": "center",
+				"orientation": "auto",
+				"reduceOptions": {
+					"calcs": [
+						"lastNotNull"
+					],
+					"fields": "",
+					"values": false
+				},
+				"textMode": "auto"
+			},
+			"targets": [
+				{
+					"expr": "sum(http_requests_in_progress{job=\"obelisk-backend\"})",
+					"legendFormat": "in-flight",
+					"refId": "A"
+				}
+			],
+			"title": "In-Flight Requests",
+			"type": "stat"
+		},
+		{
+			"datasource": "Prometheus",
+			"fieldConfig": {
+				"defaults": {},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 8,
+				"w": 12,
+				"x": 0,
+				"y": 5
+			},
+			"id": 5,
+			"options": {
+				"legend": {
+					"displayMode": "table",
+					"placement": "bottom"
+				}
+			},
+			"targets": [
+				{
+					"expr": "sum(rate(crawler_batch_queued_total{job=\"obelisk-backend\"}[10m]))",
+					"legendFormat": "queued/s",
+					"refId": "A"
+				},
+				{
+					"expr": "sum(rate(crawler_batch_failed_total{job=\"obelisk-backend\"}[10m]))",
+					"legendFormat": "failed/s",
+					"refId": "B"
+				},
+				{
+					"expr": "sum(rate(crawler_duplicates_skipped_total{job=\"obelisk-backend\"}[10m]))",
+					"legendFormat": "duplicates skipped/s",
+					"refId": "C"
+				}
+			],
+			"title": "Crawler Queue Throughput",
+			"type": "timeseries"
+		},
+		{
+			"datasource": "Prometheus",
+			"fieldConfig": {
+				"defaults": {},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 8,
+				"w": 12,
+				"x": 12,
+				"y": 5
+			},
+			"id": 6,
+			"options": {
+				"legend": {
+					"displayMode": "table",
+					"placement": "bottom"
+				}
+			},
+			"targets": [
+				{
+					"expr": "sum(rate(http_requests_total{job=\"obelisk-backend\"}[5m])) by (path)",
+					"legendFormat": "{{path}}",
+					"refId": "A"
+				}
+			],
+			"title": "Endpoint Traffic",
+			"type": "timeseries"
+		}
+	],
+	"refresh": "30s",
+	"schemaVersion": 39,
+	"style": "dark",
+	"tags": [
+		"obelisk",
+		"system"
+	],
+	"templating": {
+		"list": []
+	},
+	"time": {
+		"from": "now-6h",
+		"to": "now"
+	},
+	"timepicker": {},
+	"timezone": "",
+	"title": "OBELISK System",
+	"uid": "obelisk-system",
+	"version": 1,
+	"weekStart": ""
+}

@@ -1,1 +1,280 @@
-{}
+{
+	"annotations": {
+		"list": []
+	},
+	"editable": true,
+	"fiscalYearStartMonth": 0,
+	"graphTooltip": 0,
+	"id": null,
+	"links": [],
+	"panels": [
+		{
+			"datasource": "Prometheus",
+			"fieldConfig": {
+				"defaults": {
+					"unit": "reqps"
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 5,
+				"w": 6,
+				"x": 0,
+				"y": 0
+			},
+			"id": 1,
+			"options": {
+				"colorMode": "value",
+				"graphMode": "none",
+				"justifyMode": "center",
+				"orientation": "auto",
+				"reduceOptions": {
+					"calcs": [
+						"lastNotNull"
+					],
+					"fields": "",
+					"values": false
+				},
+				"textMode": "auto"
+			},
+			"targets": [
+				{
+					"expr": "sum(rate(http_requests_total{job=\"obelisk-backend\"}[5m]))",
+					"legendFormat": "req/s",
+					"refId": "A"
+				}
+			],
+			"title": "Request Rate",
+			"type": "stat"
+		},
+		{
+			"datasource": "Prometheus",
+			"fieldConfig": {
+				"defaults": {
+					"decimals": 2,
+					"unit": "percentunit"
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 5,
+				"w": 6,
+				"x": 6,
+				"y": 0
+			},
+			"id": 2,
+			"options": {
+				"colorMode": "value",
+				"graphMode": "none",
+				"justifyMode": "center",
+				"orientation": "auto",
+				"reduceOptions": {
+					"calcs": [
+						"lastNotNull"
+					],
+					"fields": "",
+					"values": false
+				},
+				"textMode": "auto"
+			},
+			"targets": [
+				{
+					"expr": "sum(rate(http_requests_total{job=\"obelisk-backend\",status=~\"5..\"}[5m])) / clamp_min(sum(rate(http_requests_total{job=\"obelisk-backend\"}[5m])), 1)",
+					"legendFormat": "5xx ratio",
+					"refId": "A"
+				}
+			],
+			"title": "Error Budget Burn (5xx Ratio)",
+			"type": "stat"
+		},
+		{
+			"datasource": "Prometheus",
+			"fieldConfig": {
+				"defaults": {
+					"unit": "percentunit"
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 5,
+				"w": 6,
+				"x": 12,
+				"y": 0
+			},
+			"id": 3,
+			"options": {
+				"colorMode": "value",
+				"graphMode": "none",
+				"justifyMode": "center",
+				"orientation": "auto",
+				"reduceOptions": {
+					"calcs": [
+						"lastNotNull"
+					],
+					"fields": "",
+					"values": false
+				},
+				"textMode": "auto"
+			},
+			"targets": [
+				{
+					"expr": "sum(rate(analysis_cache_requests_total{job=\"obelisk-backend\",outcome=\"hit\"}[15m])) / clamp_min(sum(rate(analysis_cache_requests_total{job=\"obelisk-backend\",outcome=~\"hit|miss\"}[15m])), 1)",
+					"legendFormat": "cache hit rate",
+					"refId": "A"
+				}
+			],
+			"title": "Cache Hit Rate",
+			"type": "stat"
+		},
+		{
+			"datasource": "Prometheus",
+			"fieldConfig": {
+				"defaults": {
+					"unit": "ms"
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 5,
+				"w": 6,
+				"x": 18,
+				"y": 0
+			},
+			"id": 4,
+			"options": {
+				"colorMode": "value",
+				"graphMode": "none",
+				"justifyMode": "center",
+				"orientation": "auto",
+				"reduceOptions": {
+					"calcs": [
+						"lastNotNull"
+					],
+					"fields": "",
+					"values": false
+				},
+				"textMode": "auto"
+			},
+			"targets": [
+				{
+					"expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"obelisk-backend\"}[5m])) by (le)) * 1000",
+					"legendFormat": "p95",
+					"refId": "A"
+				}
+			],
+			"title": "HTTP Latency p95",
+			"type": "stat"
+		},
+		{
+			"datasource": "Prometheus",
+			"fieldConfig": {
+				"defaults": {
+					"unit": "ms"
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 8,
+				"w": 12,
+				"x": 0,
+				"y": 5
+			},
+			"id": 5,
+			"options": {
+				"legend": {
+					"displayMode": "table",
+					"placement": "bottom"
+				}
+			},
+			"targets": [
+				{
+					"expr": "histogram_quantile(0.95, sum(rate(detector_duration_seconds_bucket{job=\"obelisk-backend\"}[10m])) by (le, detector)) * 1000",
+					"legendFormat": "{{detector}} p95",
+					"refId": "A"
+				}
+			],
+			"title": "Detector Latency p95",
+			"type": "timeseries"
+		},
+		{
+			"datasource": "Prometheus",
+			"fieldConfig": {
+				"defaults": {
+					"unit": "ops"
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 8,
+				"w": 12,
+				"x": 12,
+				"y": 5
+			},
+			"id": 6,
+			"options": {
+				"legend": {
+					"displayMode": "table",
+					"placement": "bottom"
+				}
+			},
+			"targets": [
+				{
+					"expr": "sum(rate(detector_failures_total{job=\"obelisk-backend\"}[10m])) by (detector)",
+					"legendFormat": "{{detector}} failures/s",
+					"refId": "A"
+				}
+			],
+			"title": "Detector Failure Rate",
+			"type": "timeseries"
+		},
+		{
+			"datasource": "Prometheus",
+			"fieldConfig": {
+				"defaults": {},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 8,
+				"w": 24,
+				"x": 0,
+				"y": 13
+			},
+			"id": 7,
+			"options": {
+				"legend": {
+					"displayMode": "list",
+					"placement": "bottom"
+				}
+			},
+			"targets": [
+				{
+					"expr": "sum(rate(http_requests_total{job=\"obelisk-backend\"}[5m])) by (status)",
+					"legendFormat": "status {{status}}",
+					"refId": "A"
+				}
+			],
+			"title": "HTTP Status Throughput",
+			"type": "timeseries"
+		}
+	],
+	"refresh": "30s",
+	"schemaVersion": 39,
+	"style": "dark",
+	"tags": [
+		"obelisk",
+		"application"
+	],
+	"templating": {
+		"list": []
+	},
+	"time": {
+		"from": "now-6h",
+		"to": "now"
+	},
+	"timepicker": {},
+	"timezone": "",
+	"title": "OBELISK Application",
+	"uid": "obelisk-application",
+	"version": 1,
+	"weekStart": ""
+}
