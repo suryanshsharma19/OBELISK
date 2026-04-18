@@ -6,11 +6,12 @@ from typing import Any, Literal, Optional
 from pydantic import BaseModel, Field, computed_field
 
 from app.models.package import PackageResponse
+from app.models.package import SEMVER_PATTERN
 
 
 class AnalyzeRequest(BaseModel):
     name: str = Field(..., examples=["express"])
-    version: str = Field(..., examples=["4.18.0"])
+    version: str = Field(..., pattern=SEMVER_PATTERN, examples=["4.18.0"])
     registry: Literal["npm", "pypi"] = "npm"
     code: Optional[str] = None
 

@@ -37,6 +37,28 @@ _gnn = GNNAnalyzer()
 _risk_scorer = RiskScorer()
 
 
+def load_detection_models() -> dict[str, bool]:
+    """Load optional detector models once at startup."""
+    statuses: dict[str, bool] = {}
+
+    loaders = {
+        "code_analysis": _code_analyzer,
+        "maintainer": _anomaly,
+        "dependency": _gnn,
+    }
+
+    for name, detector in loaders.items():
+        try:
+            detector.load_model()
+            statuses[name] = True
+            logger.info("Model loader executed for detector=%s", name)
+        except Exception as exc:
+            statuses[name] = False
+            logger.warning("Model loader failed for detector=%s: %s", name, exc)
+
+    return statuses
+
+
 async def analyze_package(
     name: str,
     version: str,
@@ -68,6 +90,9 @@ async def analyze_package(
     if not code:
         code = metadata.get("code", "")
 
+    if not code:
+        code = await _fetch_package_code(name, version, registry, metadata)
+
     # Extract maintainer info (best-effort)
     maintainer_data = _extract_maintainer(metadata)
 
@@ -83,6 +108,7 @@ async def analyze_package(
                 "behavior",
                 _behavior.run(
                 package_name=name,
+                version=version,
                 registry=registry,
                 metadata=metadata,
                 code=code or "",
@@ -117,7 +143,7 @@ async def analyze_package(
     _persist_to_neo4j(name, version, registry, analysis.risk_score, analysis.is_malicious, dependencies)
 
     # cache in Redis
-    response = _build_response(package_row, analysis, detection_results)
+    response = _build_response(package_row, analysis, detection_results, code=code or "")
     _cache_result(cache_key, response)
 
     await _emit_analysis_events(response, from_cache=False)
@@ -142,6 +168,26 @@ async def _fetch_metadata(name: str, version: str, registry: str) -> dict[str, A
         return {}
 
 
+async def _fetch_package_code(
+    name: str,
+    version: str,
+    registry: str,
+    metadata: dict[str, Any],
+) -> str:
+    try:
+        from app.services.registry_monitor import fetch_package_source_code
+
+        return await fetch_package_source_code(
+            name=name,
+            version=version,
+            registry=registry,
+            metadata=metadata,
+        )
+    except Exception as exc:
+        logger.warning("Package source fetch failed for %s@%s: %s", name, version, exc)
+        return ""
+
+
 async def _run_detector(name: str, detector_coro: Awaitable[DetectionResult]) -> DetectionResult:
     started = time.perf_counter()
     try:
@@ -155,20 +201,47 @@ async def _run_detector(name: str, detector_coro: Awaitable[DetectionResult]) ->
 
 def _extract_maintainer(metadata: dict[str, Any]) -> dict[str, Any]:
     maintainer = metadata.get("maintainer", {})
+    maintainers = metadata.get("maintainers", [])
+
+    if not maintainer and maintainers and isinstance(maintainers[0], dict):
+        maintainer = maintainers[0]
+
     if not maintainer:
         # npm-style "author" field
         author = metadata.get("author", {})
         if isinstance(author, str):
-            return {"email": "", "account_age_days": 365, "total_packages": 1}
+            return {
+                "email": "",
+                "account_age_days": metadata.get("maintainer_account_age_days", 365),
+                "total_packages": metadata.get("maintainer_total_packages", 1),
+                "has_verified_email": metadata.get("maintainer_has_verified_email", False),
+                "github_repos": metadata.get("maintainer_github_repos", 0),
+                "previous_downloads": metadata.get("maintainer_previous_downloads", 0),
+            }
         maintainer = author
 
     return {
         "email": maintainer.get("email", ""),
-        "account_age_days": maintainer.get("account_age_days", 365),
-        "total_packages": maintainer.get("total_packages", 1),
-        "has_verified_email": maintainer.get("has_verified_email", True),
-        "github_repos": maintainer.get("github_repos", 1),
-        "previous_downloads": maintainer.get("previous_downloads", 1),
+        "account_age_days": maintainer.get(
+            "account_age_days",
+            metadata.get("maintainer_account_age_days", 365),
+        ),
+        "total_packages": maintainer.get(
+            "total_packages",
+            metadata.get("maintainer_total_packages", 1),
+        ),
+        "has_verified_email": maintainer.get(
+            "has_verified_email",
+            metadata.get("maintainer_has_verified_email", False),
+        ),
+        "github_repos": maintainer.get(
+            "github_repos",
+            metadata.get("maintainer_github_repos", 0),
+        ),
+        "previous_downloads": maintainer.get(
+            "previous_downloads",
+            metadata.get("maintainer_previous_downloads", metadata.get("weekly_downloads", 0)),
+        ),
     }
 
 
@@ -195,20 +268,49 @@ def _persist_to_db(
         # upsert package
         pkg = (
             db.query(orm.Package)
-            .filter_by(name=name, version=version)
+            .filter_by(name=name, version=version, registry=registry)
             .first()
         )
+        author_name = ""
+        if isinstance(metadata.get("author"), dict):
+            author_name = str(metadata.get("author", {}).get("name", ""))
+        elif isinstance(metadata.get("author"), str):
+            author_name = metadata.get("author", "")
+
+        repository_url = ""
+        repository = metadata.get("repository")
+        if isinstance(repository, dict):
+            repository_url = str(repository.get("url", ""))
+        elif isinstance(repository, str):
+            repository_url = repository
+
+        homepage_url = str(metadata.get("homepage", "") or "")
+        weekly_downloads = int(metadata.get("weekly_downloads", 0) or 0)
+        published_at = _parse_timestamp(metadata.get("published_at"))
+
         if pkg is None:
             pkg = orm.Package(
                 name=name,
                 version=version,
                 registry=registry,
                 description=metadata.get("description", ""),
-                author=metadata.get("author", {}).get("name", "") if isinstance(metadata.get("author"), dict) else str(metadata.get("author", "")),
+                author=author_name,
                 license=metadata.get("license", ""),
-                repository_url=metadata.get("repository", {}).get("url", "") if isinstance(metadata.get("repository"), dict) else "",
+                repository_url=repository_url,
+                homepage_url=homepage_url,
+                weekly_downloads=weekly_downloads,
+                published_at=published_at,
             )
             db.add(pkg)
+
+        pkg.description = metadata.get("description", pkg.description)
+        pkg.author = author_name or pkg.author
+        pkg.license = metadata.get("license", pkg.license)
+        pkg.repository_url = repository_url or pkg.repository_url
+        pkg.homepage_url = homepage_url or pkg.homepage_url
+        pkg.weekly_downloads = weekly_downloads
+        if published_at:
+            pkg.published_at = published_at
 
         pkg.risk_score = analysis.risk_score
         pkg.threat_level = analysis.threat_level
@@ -308,8 +410,21 @@ def _build_response(
     package: orm.Package,
     analysis: AnalysisResult,
     detection_results: dict[str, DetectionResult],
+    code: str,
 ) -> dict[str, Any]:
+    dependency_graph = _build_dependency_graph(package, detection_results)
+
     return {
+        # Flattened fields kept for backward compatibility with existing frontend state mapping.
+        "name": package.name,
+        "version": package.version,
+        "registry": package.registry.value if hasattr(package.registry, "value") else str(package.registry),
+        "risk_score": analysis.risk_score,
+        "threat_level": analysis.threat_level,
+        "is_malicious": analysis.is_malicious,
+        "confidence": analysis.confidence,
+        "code": code,
+        "dependency_graph": dependency_graph,
         "package": {
             "id": package.id,
             "name": package.name,
@@ -318,6 +433,7 @@ def _build_response(
             "risk_score": analysis.risk_score,
             "threat_level": analysis.threat_level,
             "is_malicious": analysis.is_malicious,
+            "weekly_downloads": int(package.weekly_downloads or 0),
             "analyzed_at": package.analyzed_at.isoformat() if package.analyzed_at else None,
         },
         "analysis": {
@@ -337,6 +453,74 @@ def _build_response(
             for name, result in detection_results.items()
         },
     }
+
+
+def _build_dependency_graph(
+    package: orm.Package,
+    detection_results: dict[str, DetectionResult],
+) -> dict[str, Any]:
+    dependency_result = detection_results.get("dependency")
+    dependency_evidence = dependency_result.evidence if dependency_result else {}
+    dependencies = dependency_evidence.get("dependencies", [])
+
+    nodes = [
+        {
+            "id": package.name,
+            "name": package.name,
+            "riskScore": float(package.risk_score or 0),
+            "isRoot": True,
+        }
+    ]
+    edges = []
+    seen_nodes = {package.name}
+
+    if isinstance(dependencies, list):
+        for dep in dependencies:
+            if not isinstance(dep, dict):
+                continue
+            dep_name = str(dep.get("name", "")).strip()
+            if not dep_name:
+                continue
+
+            if dep_name not in seen_nodes:
+                nodes.append(
+                    {
+                        "id": dep_name,
+                        "name": dep_name,
+                        "riskScore": float(dep.get("risk_score", 0) or 0),
+                        "isRoot": False,
+                    }
+                )
+                seen_nodes.add(dep_name)
+            edges.append(
+                {
+                    "source": package.name,
+                    "target": dep_name,
+                }
+            )
+
+    return {"nodes": nodes, "edges": edges}
+
+
+def _parse_timestamp(value: Any) -> Optional[datetime]:
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return None
+        if text.endswith("Z"):
+            text = text[:-1] + "+00:00"
+        try:
+            parsed = datetime.fromisoformat(text)
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            return parsed
+        except ValueError:
+            return None
+    return None
 
 
 async def _emit_analysis_events(response: dict[str, Any], from_cache: bool) -> None:

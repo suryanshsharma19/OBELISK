@@ -59,9 +59,23 @@ class Settings(BaseSettings):
     # Sandbox
     sandbox_timeout: int = 300
     sandbox_memory_limit: str = "512m"
-    sandbox_enabled: bool = False
+    sandbox_enabled: bool = True
     sandbox_release_track: str = "v1.1"
     sandbox_allow_docker: bool = False
+
+    # Crawler runtime
+    crawler_poll_interval_seconds: int = 300
+    crawler_batch_size_npm: int = 100
+    crawler_batch_size_pypi: int = 50
+
+    # WebSocket periodic stats
+    ws_stats_interval_seconds: int = 5
+
+    # Registry source code download/extraction guards
+    source_download_timeout_seconds: float = 20.0
+    source_download_max_bytes: int = 5_000_000
+    source_extract_max_files: int = 25
+    source_extract_max_chars: int = 120_000
 
     # Readiness / startup safety
     enable_startup_readiness_checks: bool = True

@@ -87,8 +87,24 @@ class GNNAnalyzer(BaseDetector):
         if neo4j_findings.get("transitive_malicious", 0) > 0:
             score += 15
 
+        model_score = None
+        if self._gnn_model is not None:
+            model_score = self._infer_with_model(dependencies)
+            score = score * 0.6 + model_score * 0.4
+
         score = min(score, 100.0)
-        confidence = 0.7 if not self._gnn_model else 0.9
+        confidence = 0.75 if self._gnn_model is None else 0.9
+
+        dependency_entries = [
+            {
+                "name": d.get("name", ""),
+                "version": str(d.get("version", "")),
+                "risk_score": float(d.get("risk_score", 0) or 0),
+                "is_malicious": bool(d.get("is_malicious", False)),
+            }
+            for d in dependencies
+            if isinstance(d, dict)
+        ]
 
         return DetectionResult(
             score=round(score, 2),
@@ -106,9 +122,42 @@ class GNNAnalyzer(BaseDetector):
                 "total_dependencies": dep_count,
                 "dependency_depth": neo4j_findings.get("max_depth", 1),
                 "gnn_model_used": self._gnn_model is not None,
+                "model_score": round(model_score, 2) if model_score is not None else None,
                 "neo4j_available": neo4j_findings.get("available", False),
+                "dependencies": dependency_entries,
+                "malicious_paths": neo4j_findings.get("malicious_paths", []),
             },
         )
+
+    def _infer_with_model(self, dependencies: list[dict[str, Any]]) -> float:
+        """Run a lightweight, best-effort model pass if a trained artifact is available."""
+        try:
+            if not dependencies:
+                return 0.0
+
+            # Minimal feature set: dependency count, malicious count, average risk.
+            dep_count = float(len(dependencies))
+            mal_count = float(sum(1 for d in dependencies if d.get("is_malicious", False)))
+            avg_risk = (
+                sum(float(d.get("risk_score", 0) or 0) for d in dependencies) / dep_count
+                if dep_count
+                else 0.0
+            )
+
+            features = [dep_count, mal_count, avg_risk]
+
+            model = self._gnn_model
+            if hasattr(model, "predict"):
+                prediction = model.predict([features])
+                return max(0.0, min(float(prediction[0]) * 100.0, 100.0))
+
+            if callable(model):
+                prediction = model(features)
+                return max(0.0, min(float(prediction) * 100.0, 100.0))
+        except Exception as exc:
+            logger.debug("GNN model inference skipped: %s", exc)
+
+        return 0.0
 
     async def _query_neo4j(self, package_name: str) -> dict[str, Any]:
         try:
@@ -124,6 +173,7 @@ class GNNAnalyzer(BaseDetector):
                 "transitive_malicious": len(mal_chain),
                 "total_transitive": len(all_deps),
                 "max_depth": max_depth,
+                "malicious_paths": mal_chain,
             }
         except Exception as exc:
             logger.debug("Neo4j query skipped: %s", exc)
@@ -132,4 +182,5 @@ class GNNAnalyzer(BaseDetector):
                 "transitive_malicious": 0,
                 "total_transitive": 0,
                 "max_depth": 1,
+                "malicious_paths": [],
             }

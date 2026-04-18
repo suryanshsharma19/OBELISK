@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import re
 from typing import Any
 
@@ -43,6 +44,34 @@ EXTRA_PATTERNS = {
     r"npm\s+publish": ("npm publish in code", 15),
 }
 
+PYTHON_AST_RISK = {
+    "eval": ("python_eval_call", 20),
+    "exec": ("python_exec_call", 20),
+    "os.system": ("python_os_system", 20),
+    "os.popen": ("python_os_popen", 18),
+    "subprocess.run": ("python_subprocess_run", 20),
+    "subprocess.Popen": ("python_subprocess_popen", 22),
+    "__import__": ("python_dynamic_import", 15),
+    "importlib.import_module": ("python_importlib_dynamic", 15),
+    "requests.get": ("python_network_request", 8),
+    "requests.post": ("python_network_request", 8),
+    "urllib.request.urlopen": ("python_urlopen", 8),
+}
+
+PYTHON_IMPORT_RISK = {
+    "subprocess": ("python_subprocess_import", 12),
+    "socket": ("python_socket_import", 10),
+    "requests": ("python_requests_import", 6),
+    "importlib": ("python_importlib_import", 6),
+}
+
+JS_STRUCTURAL_PATTERNS = [
+    (re.compile(r"require\(['\"]child_process['\"]\)", re.I), "js_child_process_require", 20),
+    (re.compile(r"import\s+.*from\s+['\"]child_process['\"]", re.I), "js_child_process_import", 20),
+    (re.compile(r"new\s+Function\s*\(", re.I), "js_dynamic_function_ctor", 15),
+    (re.compile(r"XMLHttpRequest\s*\(", re.I), "js_xhr_usage", 8),
+]
+
 
 class CodeAnalyzer(BaseDetector):
     """Scan source code for suspicious patterns and, optionally, run CodeBERT."""
@@ -70,12 +99,20 @@ class CodeAnalyzer(BaseDetector):
 
     def load_model(self) -> None:
         try:
+            from pathlib import Path
+
             from transformers import AutoModelForSequenceClassification, AutoTokenizer
             from app.config import get_settings
 
-            model_path = get_settings().codebert_model_path
-            self._tokenizer = AutoTokenizer.from_pretrained(model_path)
-            self._model = AutoModelForSequenceClassification.from_pretrained(model_path)
+            model_path = Path(get_settings().codebert_model_path)
+            if not model_path.exists():
+                logger.info("CodeBERT path %s not found — using pattern + AST analysis", model_path)
+                self._model = None
+                self._tokenizer = None
+                return
+
+            self._tokenizer = AutoTokenizer.from_pretrained(str(model_path), local_files_only=True)
+            self._model = AutoModelForSequenceClassification.from_pretrained(str(model_path), local_files_only=True)
             logger.info("CodeBERT model loaded from %s", model_path)
         except Exception as exc:
             logger.info(
@@ -97,6 +134,10 @@ class CodeAnalyzer(BaseDetector):
         # regex pattern matching
         findings = self._pattern_scan(code)
         pattern_score = self._calculate_pattern_score(findings)
+        ast_findings = self._ast_scan(code)
+        ast_score = self._calculate_ast_score(ast_findings)
+
+        static_score = min(pattern_score + ast_score, 100.0)
 
         # CodeBERT inference (if model is loaded)
         ml_score = 0.0
@@ -106,11 +147,11 @@ class CodeAnalyzer(BaseDetector):
 
         # blend ML + patterns if model available
         if self._model is not None:
-            combined_score = pattern_score * 0.4 + ml_score * 0.6
+            combined_score = static_score * 0.4 + ml_score * 0.6
             combined_confidence = ml_confidence
         else:
-            combined_score = pattern_score
-            combined_confidence = 0.7 if findings else 0.9
+            combined_score = static_score
+            combined_confidence = 0.7 if findings or ast_findings else 0.9
 
         combined_score = min(combined_score, 100.0)
 
@@ -119,8 +160,11 @@ class CodeAnalyzer(BaseDetector):
             confidence=round(combined_confidence, 3),
             evidence={
                 "suspicious_patterns": findings,
+                "ast_findings": ast_findings,
                 "total_findings": len(findings),
+                "ast_total_findings": len(ast_findings),
                 "pattern_score": round(pattern_score, 2),
+                "ast_score": round(ast_score, 2),
                 "ml_score": round(ml_score, 2) if self._model else None,
                 "model_available": self._model is not None,
             },
@@ -148,6 +192,91 @@ class CodeAnalyzer(BaseDetector):
             return 0.0
         total = sum(f["risk_weight"] for f in findings)
         return min(total, 100.0)
+
+    @staticmethod
+    def _calculate_ast_score(findings: list[dict[str, Any]]) -> float:
+        if not findings:
+            return 0.0
+        total = sum(float(f.get("risk_weight", 0) or 0) for f in findings)
+        return min(total, 100.0)
+
+    def _ast_scan(self, code: str) -> list[dict[str, Any]]:
+        findings: list[dict[str, Any]] = []
+        findings.extend(self._ast_scan_python(code))
+        findings.extend(self._ast_like_scan_javascript(code))
+        return findings
+
+    def _ast_scan_python(self, code: str) -> list[dict[str, Any]]:
+        try:
+            tree = ast.parse(code)
+        except Exception:
+            return []
+
+        findings: list[dict[str, Any]] = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
+                call_name = self._resolve_python_call_name(node.func)
+                if call_name in PYTHON_AST_RISK:
+                    finding_type, risk_weight = PYTHON_AST_RISK[call_name]
+                    findings.append({
+                        "type": finding_type,
+                        "line": getattr(node, "lineno", 0),
+                        "risk_weight": risk_weight,
+                        "detail": call_name,
+                    })
+
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    module_name = (alias.name or "").split(".")[0]
+                    if module_name in PYTHON_IMPORT_RISK:
+                        finding_type, risk_weight = PYTHON_IMPORT_RISK[module_name]
+                        findings.append({
+                            "type": finding_type,
+                            "line": getattr(node, "lineno", 0),
+                            "risk_weight": risk_weight,
+                            "detail": module_name,
+                        })
+
+            if isinstance(node, ast.ImportFrom):
+                module_name = (node.module or "").split(".")[0]
+                if module_name in PYTHON_IMPORT_RISK:
+                    finding_type, risk_weight = PYTHON_IMPORT_RISK[module_name]
+                    findings.append({
+                        "type": finding_type,
+                        "line": getattr(node, "lineno", 0),
+                        "risk_weight": risk_weight,
+                        "detail": module_name,
+                    })
+
+        return findings
+
+    def _ast_like_scan_javascript(self, code: str) -> list[dict[str, Any]]:
+        findings: list[dict[str, Any]] = []
+        lines = code.split("\n")
+
+        for lineno, line in enumerate(lines, start=1):
+            for pattern, finding_type, risk_weight in JS_STRUCTURAL_PATTERNS:
+                if pattern.search(line):
+                    findings.append({
+                        "type": finding_type,
+                        "line": lineno,
+                        "risk_weight": risk_weight,
+                        "detail": line.strip()[:120],
+                    })
+
+        return findings
+
+    def _resolve_python_call_name(self, node: ast.AST) -> str:
+        if isinstance(node, ast.Name):
+            return node.id
+
+        if isinstance(node, ast.Attribute):
+            left = self._resolve_python_call_name(node.value)
+            if left:
+                return f"{left}.{node.attr}"
+            return node.attr
+
+        return ""
 
     def _run_codebert(self, code: str) -> tuple[float, float]:
         try:

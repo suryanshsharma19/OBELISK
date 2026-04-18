@@ -8,6 +8,7 @@ from typing import Any
 from app.core.logging import setup_logger
 from app.ml.base_detector import BaseDetector
 from app.models.analysis import DetectionResult
+from app.services import sandbox as sandbox_service
 
 logger = setup_logger(__name__)
 
@@ -38,12 +39,70 @@ class BehaviorAnalyzer(BaseDetector):
         self._is_ready = True
 
     async def analyze(self, **kwargs: Any) -> DetectionResult:
+        package_name: str = kwargs.get("package_name", "")
+        version: str = kwargs.get("version", "latest")
         metadata: dict[str, Any] = kwargs.get("metadata", {})
         code: str = kwargs.get("code", "")
         registry: str = kwargs.get("registry", "npm")
 
         behaviors: list[dict[str, Any]] = []
         score = 0.0
+
+        # Sandbox execution telemetry (network/fs/process/cpu signals)
+        sandbox_result: dict[str, Any] | None = None
+        try:
+            sandbox_result = await sandbox_service.run_in_sandbox(
+                package_name=package_name,
+                version=version,
+                registry=registry,
+            )
+        except Exception as exc:
+            logger.warning("Sandbox execution failed for %s@%s: %s", package_name, version, exc)
+            sandbox_result = {"error": str(exc), "enabled": False, "mode": "error"}
+
+        if sandbox_result:
+            network_attempts = int(sandbox_result.get("network_attempts", 0) or 0)
+            if network_attempts > 0:
+                behaviors.append({
+                    "type": "network_attempt",
+                    "description": f"Attempted {network_attempts} outbound network operation(s)",
+                    "severity": "high",
+                })
+                score += 25
+
+            file_writes = int(sandbox_result.get("file_writes", 0) or 0)
+            if file_writes > 0:
+                behaviors.append({
+                    "type": "file_write_attempt",
+                    "description": f"Attempted {file_writes} file write operation(s)",
+                    "severity": "medium",
+                })
+                score += 20
+
+            process_spawns = int(sandbox_result.get("process_spawns", 0) or 0)
+            if process_spawns > 0:
+                behaviors.append({
+                    "type": "process_spawn",
+                    "description": f"Spawned {process_spawns} subprocess(es)",
+                    "severity": "high",
+                })
+                score += 25
+
+            cpu_usage = float(sandbox_result.get("cpu_usage_percent", 0.0) or 0.0)
+            if cpu_usage > 80.0:
+                behaviors.append({
+                    "type": "high_cpu_usage",
+                    "description": f"High CPU usage observed ({cpu_usage:.1f}%)",
+                    "severity": "high",
+                })
+                score += 30
+
+            if not sandbox_result.get("enabled", True):
+                behaviors.append({
+                    "type": "sandbox_unavailable",
+                    "description": str(sandbox_result.get("reason", "Sandbox unavailable")),
+                    "severity": "low",
+                })
 
         # suspicious lifecycle scripts
         scripts = metadata.get("scripts", {})
@@ -127,5 +186,6 @@ class BehaviorAnalyzer(BaseDetector):
                 "behaviors_detected": len(behaviors),
                 "behaviors": behaviors,
                 "registry": registry,
+                "sandbox": sandbox_result or {},
             },
         )

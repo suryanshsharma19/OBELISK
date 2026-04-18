@@ -55,9 +55,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     from app.db.session import engine
     from app.db.base import Base
     from app.core.readiness import run_startup_readiness_or_raise
+    from app.services.analysis_service import load_detection_models
 
     Base.metadata.create_all(bind=engine)
     logger.info("Database tables verified/created")
+
+    model_status = load_detection_models()
+    logger.info("Detector model load status: %s", model_status)
 
     if settings.enable_startup_readiness_checks:
         app.state.startup_readiness = run_startup_readiness_or_raise(

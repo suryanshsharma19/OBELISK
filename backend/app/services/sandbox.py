@@ -30,7 +30,7 @@ async def run_in_sandbox(
             "process_spawns": 0,
             "exit_code": 0,
             "execution_time_s": 0.0,
-            "mode": "scoped_v1_1",
+            "mode": "disabled",
             "logs": [],
             "enabled": False,
             "release_track": settings.sandbox_release_track,
@@ -65,6 +65,9 @@ async def _simulate_sandbox(
         "exit_code": 0,
         "execution_time_s": 0.05,
         "mode": "simulation",
+        "enabled": True,
+        "release_track": settings.sandbox_release_track,
+        "reason": "Sandbox docker execution is disabled; using simulation telemetry",
         "logs": [],
     }
 
@@ -109,10 +112,27 @@ async def _docker_sandbox(
             "stdout": stdout.decode(errors="replace")[:5000],
             "stderr": stderr.decode(errors="replace")[:5000],
             "mode": "docker",
+            "enabled": True,
+            "release_track": settings.sandbox_release_track,
+            "reason": "Docker sandbox execution completed",
         }
     except asyncio.TimeoutError:
         logger.warning("Sandbox timed out for %s", package_name)
-        return {"exit_code": -1, "mode": "docker", "error": "timeout"}
+        return {
+            "exit_code": -1,
+            "mode": "docker",
+            "enabled": True,
+            "release_track": settings.sandbox_release_track,
+            "reason": "Docker sandbox timed out",
+            "error": "timeout",
+        }
     except Exception as exc:
         logger.error("Sandbox execution failed: %s", exc)
-        return {"exit_code": -1, "mode": "docker", "error": str(exc)}
+        return {
+            "exit_code": -1,
+            "mode": "docker",
+            "enabled": True,
+            "release_track": settings.sandbox_release_track,
+            "reason": "Docker sandbox failed",
+            "error": str(exc),
+        }

@@ -2,10 +2,10 @@ benchmark_source: backend/ml_models/saved_models/realistic_leaderboard.json
 
 thresholds:
   codebert:
-    accuracy_min: 0.84
-    precision_min: 0.82
-    recall_min: 0.84
-    f1_min: 0.84
+    accuracy_min: 0.90
+    precision_min: 0.90
+    recall_min: 0.90
+    f1_min: 0.90
 
   gnn:
     accuracy_min: 0.62

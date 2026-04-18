@@ -6,7 +6,6 @@ from app.core.auth import create_access_token
 from app.db.models import Analysis, Package
 from app.models.analysis import DetectionResult
 from app.services import analysis_service
-import app.services.sandbox as sandbox_service
 
 
 def test_analyze_flow_e2e_with_cache_and_websocket(client, db_session, monkeypatch):
@@ -59,9 +58,6 @@ def test_analyze_flow_e2e_with_cache_and_websocket(client, db_session, monkeypat
     def _set_cache(key: str, data: dict):
         cache_store[key] = data
 
-    async def _sandbox_must_not_run(*args, **kwargs):
-        raise AssertionError("Sandbox must stay out of the current critical scoring flow")
-
     monkeypatch.setattr(analysis_service, "_fetch_metadata", _fake_fetch_metadata)
     monkeypatch.setattr(analysis_service._typosquat, "run", _detector("typosquatting", 10.0))
     monkeypatch.setattr(analysis_service._code_analyzer, "run", _detector("code_analysis", 35.0))
@@ -71,7 +67,6 @@ def test_analyze_flow_e2e_with_cache_and_websocket(client, db_session, monkeypat
     monkeypatch.setattr(analysis_service, "_persist_to_neo4j", lambda *args, **kwargs: None)
     monkeypatch.setattr(analysis_service, "_get_cached_result", _get_cache)
     monkeypatch.setattr(analysis_service, "_cache_result", _set_cache)
-    monkeypatch.setattr(sandbox_service, "run_in_sandbox", _sandbox_must_not_run)
 
     payload = {
         "name": "e2e-analyze-pkg",

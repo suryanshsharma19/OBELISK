@@ -1,4 +1,4 @@
-"""Tests for the sandbox service (simulation mode)."""
+"""Tests for the sandbox service."""
 
 import pytest
 
@@ -7,7 +7,7 @@ from app.services.sandbox import run_in_sandbox
 
 @pytest.mark.asyncio
 async def test_simulation_returns_expected_keys():
-    """Scoped sandbox response should include telemetry and scope metadata."""
+    """Sandbox response should include telemetry and runtime metadata."""
     result = await run_in_sandbox("test-pkg", "1.0.0", "npm")
     expected_keys = {
         "network_attempts", "file_writes", "cpu_usage_percent",
@@ -20,10 +20,10 @@ async def test_simulation_returns_expected_keys():
 
 @pytest.mark.asyncio
 async def test_simulation_mode_label():
-    """Mode should indicate explicit v1.1 scope when disabled."""
+    """Default local mode should run simulation when docker execution is off."""
     result = await run_in_sandbox("any-pkg", "1.0.0", "npm")
-    assert result["mode"] == "scoped_v1_1"
-    assert result["enabled"] is False
+    assert result["mode"] == "simulation"
+    assert result["enabled"] is True
 
 
 @pytest.mark.asyncio
