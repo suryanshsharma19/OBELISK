@@ -141,3 +141,6 @@ temp/
 
 # Generated large storage report
 reports/storage/all_file_sizes.tsv
+
+# Local-only integrity scan outputs
+reports/non_git_integrity_scan*.txt
