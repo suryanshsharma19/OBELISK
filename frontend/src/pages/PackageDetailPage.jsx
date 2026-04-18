@@ -73,7 +73,18 @@ export default function PackageDetailPage() {
           <h2 className="mb-3 text-lg font-semibold text-gray-200">Detection Breakdown</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Object.entries(analysis.breakdown || {}).map(([key, value]) => (
-              <EvidenceCard key={key} name={key} data={value} />
+              <EvidenceCard
+                key={key}
+                detector={key}
+                result={{
+                  score: value?.score || 0,
+                  confidence: analysis?.confidence || 0,
+                  evidence: {
+                    weight: value?.weight || 0,
+                    contribution: value?.contribution || 0,
+                  },
+                }}
+              />
             ))}
           </div>
         </section>
@@ -83,7 +94,7 @@ export default function PackageDetailPage() {
       {dependencies.length > 0 && (
         <section>
           <h2 className="mb-3 text-lg font-semibold text-gray-200">Dependency Graph</h2>
-          <DependencyGraph dependencies={dependencies} />
+          <DependencyGraph dependencies={dependencies} rootName={pkg.name} />
         </section>
       )}
 

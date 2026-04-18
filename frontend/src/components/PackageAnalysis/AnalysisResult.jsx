@@ -11,6 +11,38 @@ import CodeViewer from './CodeViewer';
 import DependencyGraph from './DependencyGraph';
 import Loader from '../common/Loader';
 
+function buildGraphFromDetection(pkg, detectionDetails) {
+  const depEvidence = detectionDetails?.dependency?.evidence || {};
+  const deps = Array.isArray(depEvidence.dependencies)
+    ? depEvidence.dependencies
+    : [];
+
+  if (!pkg?.name || deps.length === 0) return null;
+
+  const nodes = [
+    {
+      id: pkg.name,
+      name: pkg.name,
+      riskScore: pkg.risk_score || 0,
+      isRoot: true,
+    },
+  ];
+  const edges = [];
+
+  deps.forEach((dep) => {
+    if (!dep?.name) return;
+    nodes.push({
+      id: dep.name,
+      name: dep.name,
+      riskScore: dep.risk_score || 0,
+      isRoot: false,
+    });
+    edges.push({ source: pkg.name, target: dep.name });
+  });
+
+  return { nodes, edges };
+}
+
 export default function AnalysisResult() {
   const { analysisResult, analyzing } = useSelector((s) => s.packages);
 
@@ -20,25 +52,31 @@ export default function AnalysisResult() {
 
   if (!analysisResult) return null;
 
-  const {
-    risk_score = 0,
-    threat_level = 'safe',
-    confidence = 0,
-    detection_details = {},
-    code,
-    dependency_graph,
-  } = analysisResult;
+  const pkg = analysisResult.package || {};
+  const analysis = analysisResult.analysis || {};
+  const detectionDetails =
+    analysisResult.detection_details || analysisResult.detectionDetails || {};
 
-  const detectors = Object.entries(detection_details);
+  const riskScore =
+    analysis.risk_score ?? analysisResult.risk_score ?? pkg.risk_score ?? 0;
+  const threatLevel =
+    analysis.threat_level ?? analysisResult.threat_level ?? pkg.threat_level ?? 'safe';
+  const confidence =
+    analysis.confidence ?? analysisResult.confidence ?? 0;
+  const code = analysisResult.code || '';
+  const dependencyGraph =
+    analysisResult.dependency_graph || buildGraphFromDetection(pkg, detectionDetails);
+
+  const detectors = Object.entries(detectionDetails);
 
   return (
     <div className="space-y-6">
       {/* Risk score overview */}
       <div className="flex flex-col items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 p-6 sm:flex-row sm:gap-8">
-        <RiskScore score={risk_score} threatLevel={threat_level} />
+        <RiskScore score={riskScore} threatLevel={threatLevel} size="large" />
         <div className="space-y-1 text-center sm:text-left">
           <p className="text-lg font-bold text-white">
-            {analysisResult.name}@{analysisResult.version}
+            {(pkg.name || analysisResult.name || 'package')}@{(pkg.version || analysisResult.version || 'unknown')}
           </p>
           <p className="text-sm text-gray-400">
             Overall confidence: {Math.round(confidence * 100)}%
@@ -64,10 +102,10 @@ export default function AnalysisResult() {
       {code && <CodeViewer code={code} />}
 
       {/* Dependency graph */}
-      {dependency_graph && (
+      {dependencyGraph && (
         <DependencyGraph
-          nodes={dependency_graph.nodes || []}
-          edges={dependency_graph.edges || []}
+          nodes={dependencyGraph.nodes || []}
+          edges={dependencyGraph.edges || []}
         />
       )}
     </div>

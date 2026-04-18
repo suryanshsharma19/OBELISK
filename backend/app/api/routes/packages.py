@@ -16,11 +16,67 @@ from app.schemas.package import (
 )
 from app.models.package import PackageResponse
 from app.services import analysis_service
+from app.utils.constants import DETECTION_WEIGHTS
 from app.utils.formatters import format_alert_summary
 
 logger = setup_logger(__name__)
 
 router = APIRouter()
+
+
+def _extract_dependency_items(raw_dependencies: object) -> list[dict[str, object]]:
+    if not isinstance(raw_dependencies, dict):
+        return []
+
+    if isinstance(raw_dependencies.get("dependencies"), list):
+        items = raw_dependencies.get("dependencies", [])
+    else:
+        items = []
+        for bucket in ("malicious_deps", "high_risk_deps"):
+            bucket_items = raw_dependencies.get(bucket, [])
+            if isinstance(bucket_items, list):
+                items.extend(bucket_items)
+
+    cleaned: list[dict[str, object]] = []
+    seen: set[str] = set()
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("name", "")).strip()
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        cleaned.append(
+            {
+                "name": name,
+                "version": str(item.get("version", "") or ""),
+                "risk_score": float(item.get("risk_score", 0) or 0),
+                "is_malicious": bool(item.get("is_malicious", False)),
+            }
+        )
+
+    return cleaned
+
+
+def _build_breakdown(analysis: Analysis) -> dict[str, dict[str, float]]:
+    score_map = {
+        "typosquatting": float(analysis.typosquatting_score or 0),
+        "code_analysis": float(analysis.code_analysis_score or 0),
+        "behavior": float(analysis.behavior_score or 0),
+        "maintainer": float(analysis.maintainer_score or 0),
+        "dependency": float(analysis.dependency_score or 0),
+    }
+    breakdown: dict[str, dict[str, float]] = {}
+
+    for detector_name, score in score_map.items():
+        weight = float(DETECTION_WEIGHTS.get(detector_name, 0))
+        breakdown[detector_name] = {
+            "score": round(score, 2),
+            "weight": weight,
+            "contribution": round(score * weight, 2),
+        }
+
+    return breakdown
 
 
 @router.post("/analyze", response_model=None)
@@ -55,7 +111,7 @@ async def list_packages(
     limit: int = Query(50, ge=1, le=100),
     threat_level: Optional[str] = Query(None),
     registry: Optional[str] = Query(None),
-    sort: str = Query("analyzed_at_desc"),
+    sort: str = Query("risk_score_desc"),
     db: Session = Depends(get_db),
     _: dict = Depends(get_current_user),
 ):
@@ -94,6 +150,7 @@ async def list_packages(
                 "analyzed_at": pkg.analyzed_at.isoformat() if pkg.analyzed_at else None,
                 "description": pkg.description or "",
                 "author": pkg.author or "",
+                "weekly_downloads": int(pkg.weekly_downloads or 0),
             }
             for pkg in packages
         ],
@@ -132,7 +189,34 @@ async def get_package_detail(
     )
 
     analysis_data = None
+    dependencies: list[dict[str, object]] = []
     if analysis:
+        dependencies = _extract_dependency_items(analysis.dependencies)
+
+        if not dependencies:
+            try:
+                from app.services.graph_service import get_package_graph
+
+                graph = get_package_graph(package.name, max_depth=3)
+                graph_deps = graph.get("dependencies", []) if isinstance(graph, dict) else []
+                for dep in graph_deps:
+                    if not isinstance(dep, dict):
+                        continue
+                    dep_name = str(dep.get("name", "")).strip()
+                    if not dep_name:
+                        continue
+                    dependencies.append(
+                        {
+                            "name": dep_name,
+                            "version": str(dep.get("version", "") or ""),
+                            "risk_score": float(dep.get("risk_score", 0) or 0),
+                            "is_malicious": bool(dep.get("is_malicious", False)),
+                        }
+                    )
+            except Exception:
+                # Keep detail endpoint resilient even when graph backend is unavailable.
+                pass
+
         analysis_data = {
             "typosquatting_score": analysis.typosquatting_score,
             "code_analysis_score": analysis.code_analysis_score,
@@ -145,6 +229,7 @@ async def get_package_detail(
             "maintainer_flags": analysis.maintainer_flags,
             "dependencies": analysis.dependencies,
             "confidence": analysis.confidence,
+            "breakdown": _build_breakdown(analysis),
         }
 
     return {
@@ -157,11 +242,15 @@ async def get_package_detail(
             "author": package.author,
             "license": package.license,
             "repository_url": package.repository_url,
+            "homepage_url": package.homepage_url,
             "risk_score": round(package.risk_score or 0.0, 2),
             "threat_level": package.threat_level.value if hasattr(package.threat_level, "value") else str(package.threat_level or "safe"),
             "is_malicious": package.is_malicious or False,
+            "weekly_downloads": int(package.weekly_downloads or 0),
             "analyzed_at": package.analyzed_at.isoformat() if package.analyzed_at else None,
+            "published_at": package.published_at.isoformat() if package.published_at else None,
         },
         "analysis": analysis_data,
         "alerts": [format_alert_summary(a) for a in alerts],
+        "dependencies": dependencies,
     }

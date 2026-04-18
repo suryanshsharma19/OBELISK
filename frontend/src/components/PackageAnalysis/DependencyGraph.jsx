@@ -15,11 +15,46 @@ function nodeColor(riskScore) {
   return THREAT_COLORS.safe;
 }
 
-export default function DependencyGraph({ nodes = [], edges = [] }) {
+function normalizeGraphInput(nodes, edges, dependencies, rootName) {
+  if (Array.isArray(nodes) && nodes.length > 0) {
+    return { nodes, edges: Array.isArray(edges) ? edges : [] };
+  }
+
+  if (!Array.isArray(dependencies) || dependencies.length === 0) {
+    return { nodes: [], edges: [] };
+  }
+
+  const rootId = rootName || 'package';
+  const nextNodes = [
+    {
+      id: rootId,
+      name: rootId,
+      riskScore: 0,
+      isRoot: true,
+    },
+  ];
+  const nextEdges = [];
+
+  dependencies.forEach((dep) => {
+    if (!dep?.name) return;
+    nextNodes.push({
+      id: dep.name,
+      name: dep.name,
+      riskScore: dep.risk_score || 0,
+      isRoot: false,
+    });
+    nextEdges.push({ source: rootId, target: dep.name });
+  });
+
+  return { nodes: nextNodes, edges: nextEdges };
+}
+
+export default function DependencyGraph({ nodes = [], edges = [], dependencies = [], rootName = '' }) {
   const svgRef = useRef(null);
+  const graph = normalizeGraphInput(nodes, edges, dependencies, rootName);
 
   useEffect(() => {
-    if (!nodes.length || !svgRef.current) return;
+    if (!graph.nodes.length || !svgRef.current) return;
 
     const width = svgRef.current.clientWidth || 600;
     const height = 400;
@@ -33,8 +68,8 @@ export default function DependencyGraph({ nodes = [], edges = [] }) {
 
     // Build the simulation
     const simulation = d3
-      .forceSimulation(nodes)
-      .force('link', d3.forceLink(edges).id((d) => d.id).distance(80))
+      .forceSimulation(graph.nodes)
+      .force('link', d3.forceLink(graph.edges).id((d) => d.id).distance(80))
       .force('charge', d3.forceManyBody().strength(-200))
       .force('center', d3.forceCenter(width / 2, height / 2));
 
@@ -42,7 +77,7 @@ export default function DependencyGraph({ nodes = [], edges = [] }) {
     const link = svg
       .append('g')
       .selectAll('line')
-      .data(edges)
+      .data(graph.edges)
       .join('line')
       .attr('stroke', '#4b5563')
       .attr('stroke-width', 1.5);
@@ -51,7 +86,7 @@ export default function DependencyGraph({ nodes = [], edges = [] }) {
     const node = svg
       .append('g')
       .selectAll('circle')
-      .data(nodes)
+      .data(graph.nodes)
       .join('circle')
       .attr('r', (d) => (d.isRoot ? 12 : 8))
       .attr('fill', (d) => nodeColor(d.riskScore || 0))
@@ -79,7 +114,7 @@ export default function DependencyGraph({ nodes = [], edges = [] }) {
     const label = svg
       .append('g')
       .selectAll('text')
-      .data(nodes)
+      .data(graph.nodes)
       .join('text')
       .text((d) => d.name || d.id)
       .attr('font-size', 10)
@@ -102,9 +137,9 @@ export default function DependencyGraph({ nodes = [], edges = [] }) {
     });
 
     return () => simulation.stop();
-  }, [nodes, edges]);
+  }, [graph.nodes, graph.edges]);
 
-  if (!nodes.length) {
+  if (!graph.nodes.length) {
     return (
       <div className="rounded-xl border border-gray-700 bg-gray-800 p-5 text-sm text-gray-500">
         No dependency data available
