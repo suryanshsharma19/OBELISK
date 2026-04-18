@@ -60,6 +60,8 @@ def test_trend_default_days(client):
     assert resp.status_code == 200
     data = resp.json()
     assert len(data["trend"]) == 7
+    assert "total_scans" in data["trend"][0]
+    assert "packages_scanned" in data["trend"][0]
 
 
 def test_trend_custom_days(client):

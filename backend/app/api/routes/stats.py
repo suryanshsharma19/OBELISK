@@ -100,6 +100,7 @@ async def stats_trend(
 
         trend.append({
             "date": day.isoformat(),
+            "total_scans": scanned,
             "packages_scanned": scanned,
             "threats_detected": threats,
         })
