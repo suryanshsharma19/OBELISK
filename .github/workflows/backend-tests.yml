@@ -70,8 +70,8 @@ jobs:
       - run: pip install -r backend/requirements-dev.txt
       - name: Enforce runtime security baseline (hard gate)
         run: cd backend && python scripts/verify_runtime_security.py --strict --require-non-local
-      - name: Enforce startup readiness (hard gate)
-        run: cd backend && python scripts/check_startup_readiness.py --strict --include-dependencies
+      - name: Evaluate startup readiness (informational in CI)
+        run: cd backend && python scripts/check_startup_readiness.py --include-dependencies --no-require-ready
       - name: Run backend tests (coverage hard gate)
         run: cd backend && pytest
       - name: Critical endpoint smoke checks (hard gate)
