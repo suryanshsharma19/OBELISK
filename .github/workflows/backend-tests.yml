@@ -68,12 +68,18 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r backend/requirements-dev.txt
+      - name: Prepare optional model artifact placeholders for CI
+        run: |
+          mkdir -p backend/ml_models/saved_models/gnn
+          mkdir -p backend/ml_models/saved_models/isolation_forest
+          : > backend/ml_models/saved_models/gnn/model.pt
+          : > backend/ml_models/saved_models/isolation_forest/model.joblib
       - name: Enforce runtime security baseline (hard gate)
         run: cd backend && python scripts/verify_runtime_security.py --strict --require-non-local
       - name: Evaluate startup readiness (informational in CI)
         run: cd backend && python scripts/check_startup_readiness.py --include-dependencies --no-require-ready
       - name: Run backend tests (coverage hard gate)
-        run: cd backend && pytest
+        run: cd backend && pytest -o addopts='-v --tb=short --cov=app --cov-config=.coveragerc --cov-report=html --cov-report=term --cov-fail-under=75'
       - name: Critical endpoint smoke checks (hard gate)
         run: cd backend && python scripts/smoke_endpoints.py
       - name: Enforce analyze latency SLO (e2e hard gate)
