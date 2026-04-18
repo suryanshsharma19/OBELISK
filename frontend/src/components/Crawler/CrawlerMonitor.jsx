@@ -32,7 +32,8 @@ export default function CrawlerMonitor() {
 
   if (loading) return <Loader fullPage text="Loading crawler status…" />;
 
-  const isRunning = status?.is_running ?? false;
+  const isRunning = status?.is_running ?? status?.running ?? false;
+  const scannedCount = status?.packages_scanned ?? status?.packages_checked ?? 0;
 
   return (
     <div className="space-y-6">
@@ -53,7 +54,7 @@ export default function CrawlerMonitor() {
           <div>
             <p className="text-xs text-gray-500">Packages Scanned</p>
             <p className="text-sm font-semibold text-white">
-              {status?.packages_scanned ?? 0}
+              {scannedCount}
             </p>
           </div>
           <div>

@@ -53,6 +53,8 @@ def crawl_registry_task(registry: str = "npm", batch_size: int = 50):
                 "status": "failed",
                 "error": f"Unsupported registry: {registry}",
                 "queued": 0,
+                "candidates": 0,
+                "threats_found": 0,
             }
     except Exception as exc:
         logger.error("Registry crawl failed for %s: %s", registry, exc)
@@ -62,12 +64,15 @@ def crawl_registry_task(registry: str = "npm", batch_size: int = 50):
             "status": "failed",
             "error": str(exc),
             "queued": 0,
+            "candidates": 0,
+            "threats_found": 0,
         }
 
     queued = 0
     duplicates_skipped = 0
     failures: list[dict[str, str]] = []
     seen_keys: set[tuple[str, str]] = set()
+    candidate_count = len(candidates)
 
     for package in candidates:
         name = package.get("name")
@@ -104,9 +109,11 @@ def crawl_registry_task(registry: str = "npm", batch_size: int = 50):
         "registry": registry,
         "batch_size": batch_size,
         "status": "completed",
+        "candidates": candidate_count,
         "queued": queued,
         "failed": len(failures),
         "duplicates_skipped": duplicates_skipped,
+        "threats_found": 0,
         "failures": failures[:10],
     }
 
