@@ -217,7 +217,7 @@ def run_e2e_benchmark(args: argparse.Namespace) -> dict[str, float]:
 
     app.router.lifespan_context = _noop_lifespan
     analysis_service._fetch_metadata = _fake_fetch_metadata
-    analysis_service._get_cached_result = lambda _key: None
+    analysis_service._get_cached_result = lambda _key: (None, "miss")
     analysis_service._cache_result = lambda _key, _data: None
     analysis_service._persist_to_neo4j = lambda *args, **kwargs: None
     analysis_service._gnn._query_neo4j = _fake_gnn_query
