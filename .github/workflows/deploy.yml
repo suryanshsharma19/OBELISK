@@ -97,17 +97,27 @@ jobs:
     needs: build-and-push
     if: needs.build-and-push.outputs.deploy_target == 'compose'
     steps:
-      - name: Validate compose deploy secrets
+      - name: Resolve compose deploy prerequisites
+        id: compose_prereqs
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_REGISTRY_USER: ${{ secrets.DEPLOY_REGISTRY_USER }}
+          DEPLOY_REGISTRY_PASSWORD: ${{ secrets.DEPLOY_REGISTRY_PASSWORD }}
         run: |
           set -euo pipefail
-          test -n "${{ secrets.DEPLOY_SSH_HOST }}"
-          test -n "${{ secrets.DEPLOY_SSH_USER }}"
-          test -n "${{ secrets.DEPLOY_SSH_KEY }}"
-          test -n "${{ secrets.DEPLOY_PATH }}"
-          test -n "${{ secrets.DEPLOY_REGISTRY_USER }}"
-          test -n "${{ secrets.DEPLOY_REGISTRY_PASSWORD }}"
+          if [[ -z "${DEPLOY_SSH_HOST}" || -z "${DEPLOY_SSH_USER}" || -z "${DEPLOY_SSH_KEY}" || -z "${DEPLOY_PATH}" || -z "${DEPLOY_REGISTRY_USER}" || -z "${DEPLOY_REGISTRY_PASSWORD}" ]]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Compose deploy secrets incomplete; skipping compose rollout."
+            exit 0
+          fi
+
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
 
       - name: Roll out compose stack
+        if: steps.compose_prereqs.outputs.enabled == 'true'
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.DEPLOY_SSH_HOST }}
