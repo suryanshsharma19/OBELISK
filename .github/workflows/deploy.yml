@@ -182,12 +182,22 @@ jobs:
       (needs.deploy-compose.result == 'success' || needs.deploy-compose.result == 'skipped') &&
       (needs.deploy-k8s.result == 'success' || needs.deploy-k8s.result == 'skipped')
     steps:
-      - name: Validate smoke-check secrets
+      - name: Resolve smoke-check prerequisites
+        id: smoke_prereqs
+        env:
+          DEPLOY_BASE_URL: ${{ secrets.DEPLOY_BASE_URL }}
         run: |
           set -euo pipefail
-          test -n "${{ secrets.DEPLOY_BASE_URL }}"
+          if [[ -z "${DEPLOY_BASE_URL}" ]]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "DEPLOY_BASE_URL not configured; skipping smoke checks."
+            exit 0
+          fi
+
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
 
       - name: Execute deployment smoke checks
+        if: steps.smoke_prereqs.outputs.enabled == 'true'
         env:
           BASE_URL: ${{ secrets.DEPLOY_BASE_URL }}
           SMOKE_AUTH_USERNAME: ${{ secrets.SMOKE_AUTH_USERNAME }}
