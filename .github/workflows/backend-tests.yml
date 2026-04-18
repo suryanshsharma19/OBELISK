@@ -77,4 +77,4 @@ jobs:
       - name: Critical endpoint smoke checks (hard gate)
         run: cd backend && python scripts/smoke_endpoints.py
       - name: Enforce analyze latency SLO (e2e hard gate)
-        run: cd backend && python scripts/benchmark_analyze.py --mode e2e --samples 30 --warmup 8 --enforce-under-ms 1200
+        run: cd backend && python scripts/benchmark_analyze.py --mode e2e --samples 30 --warmup 8 --enforce-under-ms 1000
