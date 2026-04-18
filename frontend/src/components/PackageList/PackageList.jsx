@@ -20,7 +20,7 @@ export default function PackageList() {
   const [filters, setFilters] = useState({
     threat_level: '',
     registry: '',
-    sort: 'analyzed_at_desc',
+    sort: 'risk_score_desc',
   });
 
   useEffect(() => {

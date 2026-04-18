@@ -60,7 +60,7 @@ describe('PackageList filters and pagination', () => {
       expect(fetchPackages).toHaveBeenCalledWith({
         skip: 0,
         limit: 20,
-        sort: 'analyzed_at_desc',
+        sort: 'risk_score_desc',
       });
     });
 
@@ -70,7 +70,7 @@ describe('PackageList filters and pagination', () => {
       expect(fetchPackages).toHaveBeenLastCalledWith({
         skip: 20,
         limit: 20,
-        sort: 'analyzed_at_desc',
+        sort: 'risk_score_desc',
       });
     });
 
@@ -82,7 +82,7 @@ describe('PackageList filters and pagination', () => {
         skip: 0,
         limit: 20,
         threat_level: 'high',
-        sort: 'analyzed_at_desc',
+        sort: 'risk_score_desc',
       });
     });
 

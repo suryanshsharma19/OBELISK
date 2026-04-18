@@ -40,7 +40,7 @@ export default function FilterBar({ filters, onChange }) {
 
       {/* Sort */}
       <select
-        value={filters.sort || 'analyzed_at_desc'}
+        value={filters.sort || 'risk_score_desc'}
         onChange={handleChange('sort')}
         className="rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-gray-300 focus:border-emerald-500 focus:outline-none"
       >

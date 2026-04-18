@@ -34,8 +34,8 @@ export const STORAGE_KEYS = {
 
 // Sort options used in the package list
 export const SORT_OPTIONS = [
-  { value: 'analyzed_at_desc', label: 'Newest first' },
-  { value: 'analyzed_at_asc', label: 'Oldest first' },
   { value: 'risk_score_desc', label: 'Highest risk' },
   { value: 'risk_score_asc', label: 'Lowest risk' },
+  { value: 'analyzed_at_desc', label: 'Newest first' },
+  { value: 'analyzed_at_asc', label: 'Oldest first' },
 ];

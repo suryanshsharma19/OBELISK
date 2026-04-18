@@ -32,7 +32,9 @@ export function validateAnalyzeForm({ name, version, registry }) {
     errors.name = 'Invalid package name format';
   }
 
-  if (version && !isValidVersion(version.trim())) {
+  if (!version?.trim()) {
+    errors.version = 'Version is required';
+  } else if (!isValidVersion(version.trim())) {
     errors.version = 'Invalid version (use semver, e.g. 1.2.3)';
   }
 

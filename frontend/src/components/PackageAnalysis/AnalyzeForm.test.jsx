@@ -45,6 +45,23 @@ describe('AnalyzeForm', () => {
     expect(api.analyzePackage).not.toHaveBeenCalled();
   });
 
+  it('shows validation error when version is missing', async () => {
+    const user = userEvent.setup();
+    const store = createTestStore();
+
+    render(
+      <Provider store={store}>
+        <AnalyzeForm />
+      </Provider>,
+    );
+
+    await user.type(screen.getByPlaceholderText(/e\.g\. express, lodash/i), 'express');
+    await user.click(screen.getByRole('button', { name: /analyze/i }));
+
+    expect(screen.getByText(/version is required/i)).toBeInTheDocument();
+    expect(api.analyzePackage).not.toHaveBeenCalled();
+  });
+
   it('submits valid payload and shows completion toast', async () => {
     const user = userEvent.setup();
     const store = createTestStore();
