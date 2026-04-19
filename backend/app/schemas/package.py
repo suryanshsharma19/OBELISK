@@ -3,17 +3,25 @@
 from datetime import datetime, timezone
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field, computed_field, model_validator
 
 from app.models.package import PackageResponse
-from app.models.package import SEMVER_PATTERN
+from app.models.package import is_valid_version_for_registry
 
 
 class AnalyzeRequest(BaseModel):
     name: str = Field(..., examples=["express"])
-    version: str = Field(..., pattern=SEMVER_PATTERN, examples=["4.18.0"])
+    version: str = Field(..., min_length=1, max_length=128, examples=["4.18.0", "1!2.0.0.post1"])
     registry: Literal["npm", "pypi"] = "npm"
     code: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _validate_registry_version(self) -> "AnalyzeRequest":
+        if not is_valid_version_for_registry(self.version, self.registry):
+            if self.registry == "npm":
+                raise ValueError("npm versions must be strict semver (for example 1.2.3)")
+            raise ValueError("pypi versions must be exact normalized versions (for example 1.2.3 or 1!2.0.0.post1)")
+        return self
 
 
 class AnalysisBreakdown(BaseModel):
