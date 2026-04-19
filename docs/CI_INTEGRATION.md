@@ -6,6 +6,7 @@ This guide explains how to use OBELISK as a dependency security gate in external
 
 - A local CLI scanner for CI runners: `scripts/obelisk_ci_scan.py`
 - A reusable GitHub Action: `.github/actions/obelisk-dependency-scan/action.yml`
+- PR/push changed-file code scan from git diff ranges (for example base SHA to head SHA)
 - Policy enforcement that fails CI when:
   - `threat_level` is in a blocked set (default: `high,critical`), or
   - `risk_score` is greater than or equal to a threshold (default: `60`)
@@ -25,6 +26,15 @@ The scanner resolves exact package versions from:
 If a dependency cannot be resolved to an exact version, the scanner records a resolution issue.
 By default, unresolved dependencies fail the run (`--fail-on-unresolved`).
 
+## Changed-Code Scan Scope
+
+In addition to dependency manifests, the scanner can analyze changed source files from git diff.
+
+- Enabled by default via `--scan-changed-code`.
+- Diff range can be passed explicitly with `--git-diff-range`.
+- If omitted, scanner attempts to infer range from CI environment (`pull_request` base ref, push before SHA, or `HEAD~1...HEAD`).
+- Only allowed extensions are scanned (default: `.py,.js,.jsx,.ts,.tsx,.mjs,.cjs`).
+
 ## Local CLI Usage
 
 Run on any checkout (including external repositories):
@@ -37,15 +47,22 @@ python3 scripts/obelisk_ci_scan.py \
   --auth-password "$OBELISK_AUTH_PASSWORD" \
   --risk-threshold 60 \
   --block-threat-levels high,critical \
+  --scan-changed-code \
+  --git-diff-range "$BASE_SHA...$HEAD_SHA" \
   --output-json obelisk-scan-report.json
 ```
 
 Optional flags:
 
 - `--no-include-dev-dependencies` (dev dependencies are scanned by default)
+- `--no-scan-changed-code`
 - `--no-fail-on-unresolved`
 - `--no-fail-on-scan-error`
 - `--no-mark-blocked-in-ci`
+- `--allowed-code-extensions`
+- `--max-changed-files`
+- `--max-code-file-bytes`
+- `--max-code-chars`
 
 Exit codes:
 
@@ -71,6 +88,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve diff range
+        id: diff
+        run: |
+          echo "range=${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" >> "$GITHUB_OUTPUT"
 
       - name: OBELISK dependency scan
         uses: suryanshsharma19/OBELISK/.github/actions/obelisk-dependency-scan@main
@@ -81,6 +105,8 @@ jobs:
           risk_threshold: "60"
           block_threat_levels: high,critical
           include_dev_dependencies: "true"
+          scan_changed_code: "true"
+          git_diff_range: ${{ steps.diff.outputs.range }}
           fail_on_unresolved: "true"
           mark_blocked_in_ci: "true"
 ```
