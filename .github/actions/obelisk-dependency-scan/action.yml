@@ -27,6 +27,34 @@ inputs:
     description: Include dev dependencies in scan
     required: false
     default: "true"
+  scan_changed_code:
+    description: Analyze changed source files from git diff
+    required: false
+    default: "true"
+  git_diff_range:
+    description: Explicit git diff range for changed-code scan
+    required: false
+    default: ""
+  fail_on_missing_diff_range:
+    description: Fail if changed-code scan is enabled but diff range cannot be inferred
+    required: false
+    default: "false"
+  allowed_code_extensions:
+    description: Comma-separated file extensions for changed-code scanning
+    required: false
+    default: .py,.js,.jsx,.ts,.tsx,.mjs,.cjs
+  max_changed_files:
+    description: Maximum changed files to inspect
+    required: false
+    default: "300"
+  max_code_file_bytes:
+    description: Maximum bytes per changed file for code scanning
+    required: false
+    default: "200000"
+  max_code_chars:
+    description: Maximum characters submitted per changed file
+    required: false
+    default: "30000"
   fail_on_unresolved:
     description: Fail if exact versions cannot be resolved from manifests
     required: false
@@ -60,6 +88,18 @@ runs:
           BOOL_ARGS+=(--no-include-dev-dependencies)
         fi
 
+        if [[ "${{ inputs.scan_changed_code }}" == "true" ]]; then
+          BOOL_ARGS+=(--scan-changed-code)
+        else
+          BOOL_ARGS+=(--no-scan-changed-code)
+        fi
+
+        if [[ "${{ inputs.fail_on_missing_diff_range }}" == "true" ]]; then
+          BOOL_ARGS+=(--fail-on-missing-diff-range)
+        else
+          BOOL_ARGS+=(--no-fail-on-missing-diff-range)
+        fi
+
         if [[ "${{ inputs.fail_on_unresolved }}" == "true" ]]; then
           BOOL_ARGS+=(--fail-on-unresolved)
         else
@@ -85,5 +125,10 @@ runs:
           --auth-password "${{ inputs.auth_password }}" \
           --risk-threshold "${{ inputs.risk_threshold }}" \
           --block-threat-levels "${{ inputs.block_threat_levels }}" \
+          --git-diff-range "${{ inputs.git_diff_range }}" \
+          --allowed-code-extensions "${{ inputs.allowed_code_extensions }}" \
+          --max-changed-files "${{ inputs.max_changed_files }}" \
+          --max-code-file-bytes "${{ inputs.max_code_file_bytes }}" \
+          --max-code-chars "${{ inputs.max_code_chars }}" \
           --output-json "${{ inputs.output_json }}" \
           "${BOOL_ARGS[@]}"
