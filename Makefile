@@ -1,5 +1,5 @@
 .PHONY: help setup dev down clean test lint format datasets datasets-quick datasets-offline \
-	load-validate benchmark-analyze ml-gates ml-version ml-pipeline
+	load-validate benchmark-analyze ml-gates ml-version ml-pipeline adversarial-check adversarial-compare
 
 help:
 	@echo "OBELISK Development Commands"
@@ -19,6 +19,8 @@ help:
 	@echo "make ml-gates - Enforce ML acceptance thresholds"
 	@echo "make ml-version - Create versioned artifact manifest"
 	@echo "make ml-pipeline - Run train/eval/gate/version ML pipeline"
+	@echo "make adversarial-check - Run synthetic adversarial suite with pass/fail gates"
+	@echo "make adversarial-compare - Run suite and compare against baseline report"
 
 setup:
 	@echo "Setting up OBELISK..."
@@ -76,3 +78,20 @@ ml-version:
 
 ml-pipeline:
 	python3 backend/ml_models/train/run_pipeline.py
+
+adversarial-check:
+	backend/.venv311/bin/python scripts/adversarial_suite.py \
+		--require-docker-sandbox \
+		--output reports/adversarial/latest.json \
+		--enforce
+
+adversarial-compare:
+	@if [ -z "$(BASELINE)" ]; then \
+		echo "Usage: make adversarial-compare BASELINE=reports/adversarial/before.json"; \
+		exit 1; \
+	fi
+	backend/.venv311/bin/python scripts/adversarial_suite.py \
+		--require-docker-sandbox \
+		--baseline $(BASELINE) \
+		--output reports/adversarial/after.json \
+		--enforce
