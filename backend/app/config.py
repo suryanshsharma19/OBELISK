@@ -2,10 +2,16 @@
 
 from functools import lru_cache
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=False,
+        extra="ignore",
+    )
 
     # Runtime environment
     environment: str = "local"  # local | staging | production
@@ -52,9 +58,9 @@ class Settings(BaseSettings):
     pypi_registry_url: str = "https://pypi.org/pypi"
 
     # ML model paths
-    codebert_model_path: str = "ml_models/saved_models/codebert"
-    gnn_model_path: str = "ml_models/saved_models/gnn"
-    isolation_forest_path: str = "ml_models/saved_models/isolation_forest"
+    codebert_model_path: str = "ml_models/saved_models/codebert_best"
+    gnn_model_path: str = "ml_models/saved_models/gnn_best"
+    isolation_forest_path: str = "ml_models/saved_models/isolation_forest_best_realistic"
 
     # Sandbox
     sandbox_timeout: int = 300
@@ -95,11 +101,6 @@ class Settings(BaseSettings):
     @property
     def redis_url(self) -> str:
         return f"redis://{self.redis_host}:{self.redis_port}/0"
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
-
 
 @lru_cache()
 def get_settings() -> Settings:
