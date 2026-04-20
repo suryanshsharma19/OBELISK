@@ -25,6 +25,15 @@ def test_health_endpoint_contract(client):
 
 
 def test_readiness_endpoint_contract_ready(client, monkeypatch):
+    previous_startup = getattr(app.state, "startup_readiness", None)
+    app.state.startup_readiness = {
+        "status": "ready",
+        "ready": True,
+        "checked_at": "2026-01-01T00:00:00+00:00",
+        "checks": {},
+        "failures": [],
+    }
+
     monkeypatch.setattr(
         "app.api.routes.health.collect_runtime_readiness",
         lambda include_dependencies=True: {
@@ -36,11 +45,17 @@ def test_readiness_endpoint_contract_ready(client, monkeypatch):
         },
     )
 
-    resp = client.get("/health/ready")
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["status"] == "ready"
-    assert data["runtime"]["ready"] is True
+    try:
+        resp = client.get("/health/ready")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "ready"
+        assert data["runtime"]["ready"] is True
+    finally:
+        if previous_startup is None:
+            delattr(app.state, "startup_readiness")
+        else:
+            app.state.startup_readiness = previous_startup
 
 
 def test_readiness_endpoint_contract_degraded(client, monkeypatch):
