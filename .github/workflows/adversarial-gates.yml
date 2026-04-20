@@ -1,0 +1,90 @@
+name: Adversarial Gates
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  adversarial-suite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install suite runner dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Generate baseline adversarial report (calibration disabled)
+        env:
+          RISK_DISABLE_CALIBRATION: "true"
+        run: |
+          set -euo pipefail
+          docker compose up -d --build postgres neo4j redis backend
+          python scripts/adversarial_suite.py \
+            --require-docker-sandbox \
+            --output reports/adversarial/before.json
+
+      - name: Generate tuned adversarial report (calibration enabled, enforce gates)
+        env:
+          RISK_DISABLE_CALIBRATION: "false"
+        run: |
+          set -euo pipefail
+          docker compose up -d --build backend
+          python scripts/adversarial_suite.py \
+            --require-docker-sandbox \
+            --baseline reports/adversarial/before.json \
+            --output reports/adversarial/after.json \
+            --enforce
+
+      - name: Publish adversarial summary
+        if: always()
+        run: |
+          set -euo pipefail
+          if [[ -f reports/adversarial/after.json ]]; then
+            python - <<'PY'
+import json
+from pathlib import Path
+
+after_path = Path("reports/adversarial/after.json")
+report = json.loads(after_path.read_text())
+metrics = report.get("metrics", {})
+delta = report.get("before_after_delta", {})
+
+print("Adversarial overall pass:", metrics.get("overall_pass"))
+print("Docker mode samples:", f"{metrics.get('docker_mode_count', 0)}/{metrics.get('sample_count', 0)}")
+print("Benign max risk:", metrics.get("benign_max_risk"))
+print("Malicious detected:", f"{metrics.get('malicious_detected_count', 0)}/{metrics.get('malicious_sample_count', 0)}")
+print("Avg benign risk before/after:", f"{delta.get('avg_benign_risk_before')} -> {delta.get('avg_benign_risk_after')}")
+print("Avg malicious risk before/after:", f"{delta.get('avg_malicious_risk_before')} -> {delta.get('avg_malicious_risk_after')}")
+PY
+          else
+            echo "No tuned report generated."
+          fi
+
+      - name: Upload adversarial reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: adversarial-reports
+          path: reports/adversarial/*.json
+          if-no-files-found: warn
+
+      - name: Dump backend logs on failure
+        if: failure()
+        run: |
+          docker compose logs backend --tail=400 || true
+
+      - name: Teardown stack
+        if: always()
+        run: |
+          docker compose down -v
