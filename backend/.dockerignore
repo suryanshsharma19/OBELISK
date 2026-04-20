@@ -6,6 +6,8 @@ __pycache__
 env/
 venv/
 .venv
+.venv*/
+.venv311/
 pip-log.txt
 pip-delete-this-directory.txt
 .tox/
@@ -22,3 +24,5 @@ coverage.xml
 .hypothesis
 *.db
 *.sqlite
+ml_models/datasets/
+ml_models/saved_models/
