@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from app.core.logging import setup_logger
@@ -15,6 +16,10 @@ logger = setup_logger(__name__)
 AGREEMENT_THRESHOLD = 50.0
 
 MALICIOUS_THRESHOLD = 60.0
+
+# Code analysis can over-score benign snippets in isolation.
+# If no other detector crosses agreement threshold, dampen the aggregate.
+CODE_ONLY_DAMPENING_FACTOR = 0.65
 
 
 class RiskScorer:
@@ -50,6 +55,7 @@ class RiskScorer:
             }
 
         risk_score = round(min(weighted_score, 100.0), 2)
+        risk_score, calibration = self._apply_calibration(risk_score, detection_results)
         threat_level = calculate_threat_level(risk_score)
         is_malicious = risk_score >= MALICIOUS_THRESHOLD
 
@@ -71,9 +77,53 @@ class RiskScorer:
                 "weights_used": self.weights,
                 "agreement_threshold": AGREEMENT_THRESHOLD,
                 "malicious_threshold": MALICIOUS_THRESHOLD,
+                "calibration": calibration,
             },
             analyzed_at=get_current_timestamp(),
         )
+
+    def _apply_calibration(
+        self,
+        risk_score: float,
+        detection_results: dict[str, DetectionResult],
+    ) -> tuple[float, dict[str, Any]]:
+        if os.getenv("RISK_DISABLE_CALIBRATION", "false").strip().lower() in {"1", "true", "yes"}:
+            return round(risk_score, 2), {
+                "applied": False,
+                "policy": "disabled_by_env",
+                "pre_calibration_risk": round(risk_score, 2),
+                "post_calibration_risk": round(risk_score, 2),
+            }
+
+        code_result = detection_results.get("code_analysis")
+        other_detector_high = any(
+            (name != "code_analysis") and result is not None and result.score > AGREEMENT_THRESHOLD
+            for name, result in detection_results.items()
+        )
+
+        calibration = {
+            "applied": False,
+            "policy": "none",
+            "pre_calibration_risk": round(risk_score, 2),
+            "post_calibration_risk": round(risk_score, 2),
+        }
+
+        if code_result is None:
+            return round(risk_score, 2), calibration
+
+        if code_result.score > AGREEMENT_THRESHOLD and not other_detector_high:
+            adjusted = round(risk_score * CODE_ONLY_DAMPENING_FACTOR, 2)
+            calibration.update(
+                {
+                    "applied": True,
+                    "policy": "code_analysis_only_dampening",
+                    "factor": CODE_ONLY_DAMPENING_FACTOR,
+                    "post_calibration_risk": adjusted,
+                }
+            )
+            return adjusted, calibration
+
+        return round(risk_score, 2), calibration
 
     def _calculate_confidence(
         self,

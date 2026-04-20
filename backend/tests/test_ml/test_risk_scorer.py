@@ -83,3 +83,21 @@ def test_missing_detector_treated_as_zero(scorer):
     analysis = scorer.calculate_risk(results)
     # Only typosquatting contributes: 90 * 0.25 = 22.5
     assert abs(analysis.risk_score - 22.5) < 0.5
+
+
+def test_code_only_signal_is_dampened(scorer):
+    """Code-analysis-only spikes should be dampened by calibration."""
+    results = {
+        "typosquatting": _make_result(0),
+        "code_analysis": _make_result(60),
+        "behavior": _make_result(0),
+        "maintainer": _make_result(0),
+        "dependency": _make_result(0),
+    }
+
+    analysis = scorer.calculate_risk(results)
+    # Raw score would be 60 * 0.35 = 21.0; calibration should reduce it.
+    assert analysis.risk_score < 21.0
+    calibration = analysis.detection_details.get("calibration", {})
+    assert calibration.get("applied") is True
+    assert calibration.get("policy") == "code_analysis_only_dampening"

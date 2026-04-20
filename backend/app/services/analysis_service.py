@@ -442,6 +442,7 @@ def _build_response(
             "is_malicious": analysis.is_malicious,
             "confidence": analysis.confidence,
             "breakdown": analysis.detection_details.get("breakdown", {}),
+            "calibration": analysis.detection_details.get("calibration", {}),
         },
         "detection_details": {
             name: {
