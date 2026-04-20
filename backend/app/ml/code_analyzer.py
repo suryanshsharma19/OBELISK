@@ -84,8 +84,59 @@ class CodeAnalyzer(BaseDetector):
         super().__init__()
         self._model = None
         self._tokenizer = None
+        self._tokenizer_source = None
         self._is_ready = True
         self._compiled_patterns = self._compile_patterns()
+
+    def _load_tokenizer_with_fallback(self, model_path: "Path"):
+        from transformers import AutoTokenizer
+
+        attempts = [
+            (
+                "local-fast",
+                {
+                    "pretrained_model_name_or_path": str(model_path),
+                    "local_files_only": True,
+                },
+            ),
+            (
+                "local-slow",
+                {
+                    "pretrained_model_name_or_path": str(model_path),
+                    "local_files_only": True,
+                    "use_fast": False,
+                },
+            ),
+            (
+                "base-slow-cached",
+                {
+                    "pretrained_model_name_or_path": "microsoft/codebert-base",
+                    "local_files_only": True,
+                    "use_fast": False,
+                },
+            ),
+            (
+                "base-slow-download",
+                {
+                    "pretrained_model_name_or_path": "microsoft/codebert-base",
+                    "local_files_only": False,
+                    "use_fast": False,
+                },
+            ),
+        ]
+
+        last_error = None
+        for source, kwargs in attempts:
+            try:
+                tokenizer = AutoTokenizer.from_pretrained(**kwargs)
+                self._tokenizer_source = source
+                return tokenizer
+            except Exception as exc:
+                last_error = exc
+
+        raise RuntimeError(
+            "No compatible tokenizer could be loaded for CodeBERT"
+        ) from last_error
 
     def _compile_patterns(self) -> list[tuple[re.Pattern, str, int]]:
         compiled = []
@@ -101,7 +152,7 @@ class CodeAnalyzer(BaseDetector):
         try:
             from pathlib import Path
 
-            from transformers import AutoModelForSequenceClassification, AutoTokenizer
+            from transformers import AutoModelForSequenceClassification
             from app.config import get_settings
 
             model_path = Path(get_settings().codebert_model_path)
@@ -109,11 +160,17 @@ class CodeAnalyzer(BaseDetector):
                 logger.info("CodeBERT path %s not found — using pattern + AST analysis", model_path)
                 self._model = None
                 self._tokenizer = None
+                self._tokenizer_source = None
                 return
 
-            self._tokenizer = AutoTokenizer.from_pretrained(str(model_path), local_files_only=True)
             self._model = AutoModelForSequenceClassification.from_pretrained(str(model_path), local_files_only=True)
-            logger.info("CodeBERT model loaded from %s", model_path)
+            self._tokenizer = self._load_tokenizer_with_fallback(model_path)
+            self._model.eval()
+            logger.info(
+                "CodeBERT model loaded from %s (tokenizer source=%s)",
+                model_path,
+                self._tokenizer_source,
+            )
         except Exception as exc:
             logger.info(
                 "CodeBERT not available (%s) — falling back to pattern matching only",
@@ -121,6 +178,7 @@ class CodeAnalyzer(BaseDetector):
             )
             self._model = None
             self._tokenizer = None
+            self._tokenizer_source = None
 
     async def analyze(self, **kwargs: Any) -> DetectionResult:
         code: str = kwargs.get("code", "")
