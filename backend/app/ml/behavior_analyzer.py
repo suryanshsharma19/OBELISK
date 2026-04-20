@@ -55,6 +55,7 @@ class BehaviorAnalyzer(BaseDetector):
                 package_name=package_name,
                 version=version,
                 registry=registry,
+                code=code,
             )
         except Exception as exc:
             logger.warning("Sandbox execution failed for %s@%s: %s", package_name, version, exc)
