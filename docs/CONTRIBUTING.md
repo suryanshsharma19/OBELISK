@@ -54,6 +54,16 @@ python scripts/benchmark_analyze.py --mode e2e --samples 40 --warmup 10 --enforc
 - Avoid breaking response contracts without migration notes.
 - For frontend, keep components focused and test critical user paths.
 
+## ML Model Contributions
+
+If your changes affect ML detectors or training pipelines:
+
+1. Train and evaluate models: `make ml-pipeline`
+2. Verify acceptance gates pass: `make ml-gates`
+3. Run the adversarial malware test suite: `make adversarial-check`
+4. Push updated models to HuggingFace: `make sync-models`
+5. Include benchmark results in your PR description.
+
 ## Pull Request Checklist
 
 - [ ] Change description and motivation are clear.
@@ -61,6 +71,7 @@ python scripts/benchmark_analyze.py --mode e2e --samples 40 --warmup 10 --enforc
 - [ ] Test evidence is included.
 - [ ] Any schema or API change is documented.
 - [ ] Backward compatibility notes are included where required.
+- [ ] ML model changes include updated benchmarks and HuggingFace sync.
 
 ## Security Reporting
 

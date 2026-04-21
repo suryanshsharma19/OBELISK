@@ -137,10 +137,11 @@ export DEPLOY_TARGET="compose"
 
 Deployment and CI readiness checks validate:
 
-1. Model artifacts:
-	- `ml_models/saved_models/codebert/config.json`
-	- `ml_models/saved_models/gnn/model.pt`
-	- `ml_models/saved_models/isolation_forest/model.joblib`
+1. Model artifacts (auto-downloaded from [HuggingFace](https://huggingface.co/suryanshsharma19/obelisk-models) during `make setup`):
+	- `ml_models/saved_models/codebert/config.json` (CodeBERT transformer)
+	- `ml_models/saved_models/gnn/model.pt` (Graph Neural Network)
+	- `ml_models/saved_models/isolation_forest/model.joblib` (Isolation Forest)
+	- If missing, run `python backend/scripts/download_models.py` to fetch ~3.7 GB from HuggingFace
 2. Dependency readiness:
 	- PostgreSQL
 	- Redis

@@ -78,7 +78,7 @@ Prometheus metrics endpoint for application and worker telemetry.
 
 ### POST /api/packages/analyze
 
-Protected endpoint. Runs full analysis pipeline.
+Protected endpoint. Runs the full 5-layer analysis pipeline (typosquatting, code analysis, behavioral, maintainer risk, dependency graph).
 
 Request body:
 
@@ -91,13 +91,22 @@ Request body:
 }
 ```
 
+The `code` field is optional. If provided (via paste or the frontend's **UPLOAD FILE** button which supports `.js`, `.py`, `.ts`, `.json`, and other source files), the source code is passed directly to the CodeBERT analyzer and behavioral detector for deep analysis. If omitted, OBELISK automatically fetches the package source from the registry.
+
 Response shape:
 
 ```json
 {
 	"package": {"name": "express", "version": "4.18.2", "registry": "npm"},
-	"analysis": {"risk_score": 12.3, "threat_level": "low", "is_malicious": false},
-	"detection_details": {}
+	"analysis": {"risk_score": 12.3, "threat_level": "low", "is_malicious": false, "confidence": 0.95},
+	"detection_details": {
+		"typosquatting": {"score": 5.0, "evidence": {}},
+		"code_analysis": {"score": 10.2, "evidence": {}},
+		"behavior": {"score": 8.1, "evidence": {}},
+		"maintainer": {"score": 3.5, "evidence": {}},
+		"dependency": {"score": 2.0, "evidence": {}}
+	},
+	"dependency_graph": {"nodes": [], "edges": []}
 }
 ```
 
