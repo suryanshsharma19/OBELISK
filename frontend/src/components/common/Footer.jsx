@@ -3,21 +3,35 @@
  */
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 export default function Footer() {
   return (
-    <footer className="border-t border-gray-700 bg-gray-900 px-4 py-3 text-center text-xs text-gray-500">
-      <p>
-        OBELISK &mdash; AI-Powered Supply Chain Attack Detection &middot;{' '}
-        <a
-          href="https://github.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-emerald-400 hover:underline"
+    <footer className="bg-neutral-950 w-full border-t-2 border-outline-variant flex flex-col md:flex-row justify-between items-center px-8 py-6 gap-4 z-50">
+      <div className="text-lg font-bold text-primary-container font-headline uppercase">OBELISK</div>
+      
+      <div className="flex flex-wrap justify-center gap-6 font-mono text-xs tracking-tight">
+        <a 
+          href="https://github.com/suryanshsharma19/OBELISK" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="text-outline hover:text-primary-container uppercase transition-none"
         >
-          GitHub
+          GITHUB_REPO
         </a>
-      </p>
+        <a 
+          href="https://github.com/suryanshsharma19" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="text-outline hover:text-primary-container uppercase transition-none"
+        >
+          DEVELOPER_PROFILE
+        </a>
+      </div>
+      
+      <div className="font-mono text-xs tracking-tight text-outline uppercase text-center md:text-right">
+        DEVELOPED BY SURYANSH SHARMA.
+      </div>
     </footer>
   );
 }

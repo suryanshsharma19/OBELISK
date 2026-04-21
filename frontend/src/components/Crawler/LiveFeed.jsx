@@ -22,7 +22,7 @@ export default function LiveFeed() {
     <div className="rounded-xl border border-gray-700 bg-gray-800 p-5">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-300">Live Feed</h3>
-        <span className={`text-xs ${connected ? 'text-emerald-400' : 'text-gray-500'}`}>
+        <span className={`text-xs ${connected ? 'text-neon-400' : 'text-gray-500'}`}>
           {connected ? '● Connected' : '○ Disconnected'}
         </span>
       </div>

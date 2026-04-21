@@ -11,7 +11,7 @@ const CARDS = [
   { key: 'total_packages', label: 'Total Packages', icon: Package, color: 'text-blue-400' },
   { key: 'malicious_packages', label: 'Malicious Detected', icon: ShieldAlert, color: 'text-red-400' },
   { key: 'active_alerts', label: 'Active Alerts', icon: Bell, color: 'text-amber-400' },
-  { key: 'scans_24h', label: '24h Scans', icon: Activity, color: 'text-emerald-400' },
+  { key: 'scans_24h', label: '24h Scans', icon: Activity, color: 'text-neon-400' },
 ];
 
 export default function StatsCards({ stats = {} }) {

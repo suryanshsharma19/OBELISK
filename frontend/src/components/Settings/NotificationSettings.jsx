@@ -39,7 +39,7 @@ export default function NotificationSettings() {
           <button
             onClick={toggle(key)}
             className={`relative h-6 w-11 rounded-full transition-colors ${
-              prefs[key] ? 'bg-emerald-600' : 'bg-gray-600'
+              prefs[key] ? 'bg-neon-600' : 'bg-gray-600'
             }`}
             role="switch"
             aria-checked={prefs[key]}

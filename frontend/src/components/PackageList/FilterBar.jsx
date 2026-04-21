@@ -18,7 +18,7 @@ export default function FilterBar({ filters, onChange }) {
       <select
         value={filters.threat_level || ''}
         onChange={handleChange('threat_level')}
-        className="rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-gray-300 focus:border-emerald-500 focus:outline-none"
+        className="rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-gray-300 focus:border-neon-500 focus:outline-none"
       >
         <option value="">All Levels</option>
         {THREAT_LEVELS.map((l) => (
@@ -30,7 +30,7 @@ export default function FilterBar({ filters, onChange }) {
       <select
         value={filters.registry || ''}
         onChange={handleChange('registry')}
-        className="rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-gray-300 focus:border-emerald-500 focus:outline-none"
+        className="rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-gray-300 focus:border-neon-500 focus:outline-none"
       >
         <option value="">All Registries</option>
         {REGISTRIES.map((r) => (
@@ -42,7 +42,7 @@ export default function FilterBar({ filters, onChange }) {
       <select
         value={filters.sort || 'risk_score_desc'}
         onChange={handleChange('sort')}
-        className="rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-gray-300 focus:border-emerald-500 focus:outline-none"
+        className="rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-gray-300 focus:border-neon-500 focus:outline-none"
       >
         {SORT_OPTIONS.map(({ value, label }) => (
           <option key={value} value={value}>{label}</option>

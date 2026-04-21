@@ -6,7 +6,7 @@ import { removeToast } from '../../store/slices/uiSlice';
 import { X, CheckCircle, AlertTriangle, Info, XCircle } from 'lucide-react';
 
 const ICONS = {
-  success: <CheckCircle size={18} className="text-emerald-400" />,
+  success: <CheckCircle size={18} className="text-neon-400" />,
   error: <XCircle size={18} className="text-red-400" />,
   warning: <AlertTriangle size={18} className="text-amber-400" />,
   info: <Info size={18} className="text-blue-400" />,

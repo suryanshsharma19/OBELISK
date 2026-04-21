@@ -16,7 +16,7 @@ export default function AlertFilter({ filters, onChange }) {
       <select
         value={filters.threat_level || ''}
         onChange={handleChange('threat_level')}
-        className="rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-gray-300 focus:border-emerald-500 focus:outline-none"
+        className="rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-gray-300 focus:border-neon-500 focus:outline-none"
       >
         <option value="">All Levels</option>
         {THREAT_LEVELS.map((l) => (
@@ -27,7 +27,7 @@ export default function AlertFilter({ filters, onChange }) {
       <select
         value={filters.is_resolved ?? ''}
         onChange={handleChange('is_resolved')}
-        className="rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-gray-300 focus:border-emerald-500 focus:outline-none"
+        className="rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-gray-300 focus:border-neon-500 focus:outline-none"
       >
         <option value="">All Status</option>
         <option value="false">Active</option>

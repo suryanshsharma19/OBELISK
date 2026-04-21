@@ -19,7 +19,14 @@ export default function EvidenceCard({ detector = '', result = {} }) {
 
   // Flatten evidence into displayable items
   const items = Object.entries(evidence).map(([key, val]) => {
-    const display = Array.isArray(val) ? val.join(', ') : String(val);
+    let display = '';
+    if (Array.isArray(val)) {
+      display = val.map(v => typeof v === 'object' ? JSON.stringify(v) : String(v)).join(', ');
+    } else if (typeof val === 'object' && val !== null) {
+      display = JSON.stringify(val);
+    } else {
+      display = String(val);
+    }
     return { key, display };
   });
 
@@ -56,8 +63,8 @@ export default function EvidenceCard({ detector = '', result = {} }) {
         <ul className="space-y-1">
           {items.map(({ key, display }) => (
             <li key={key} className="flex text-xs">
-              <span className="w-28 shrink-0 text-gray-500">{key}</span>
-              <span className="text-gray-300">{display}</span>
+              <span className="w-28 shrink-0 text-gray-500 break-words">{key}</span>
+              <span className="text-gray-300 break-all flex-1">{display}</span>
             </li>
           ))}
         </ul>

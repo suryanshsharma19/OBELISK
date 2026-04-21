@@ -47,7 +47,7 @@ export default function CrawlerMonitor() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div>
             <p className="text-xs text-gray-500">Status</p>
-            <p className={`text-sm font-semibold ${isRunning ? 'text-emerald-400' : 'text-gray-400'}`}>
+            <p className={`text-sm font-semibold ${isRunning ? 'text-neon-400' : 'text-gray-400'}`}>
               {isRunning ? 'Running' : 'Stopped'}
             </p>
           </div>

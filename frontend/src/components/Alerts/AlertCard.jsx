@@ -16,7 +16,7 @@ export default function AlertCard({ alert }) {
   return (
     <div
       className={`rounded-xl border bg-gray-800 p-4 transition ${
-        alert.is_read ? 'border-gray-700' : 'border-emerald-700'
+        alert.is_read ? 'border-gray-700' : 'border-neon-700'
       }`}
     >
       <div className="mb-2 flex items-start justify-between gap-2">
@@ -50,7 +50,7 @@ export default function AlertCard({ alert }) {
         {!alert.is_resolved && (
           <button
             onClick={() => dispatch(resolveAlert(alert.id))}
-            className="flex items-center gap-1 rounded-lg bg-emerald-700 px-3 py-1.5 text-xs text-white hover:bg-emerald-600"
+            className="flex items-center gap-1 rounded-lg bg-neon-700 px-3 py-1.5 text-xs text-white hover:bg-neon-600"
           >
             <Check size={14} /> Resolve
           </button>

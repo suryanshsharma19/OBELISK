@@ -8,7 +8,7 @@ export const WS_BASE_URL =
 
 // Threat-level colour palette (matches Tailwind classes)
 export const THREAT_COLORS = {
-  safe: '#10b981',     // emerald-500
+  safe: '#10b981',     // neon-500
   low: '#3b82f6',      // blue-500
   medium: '#f59e0b',   // amber-500
   high: '#f97316',     // orange-500

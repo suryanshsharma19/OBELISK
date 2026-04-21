@@ -14,7 +14,7 @@ export default function RecentAlerts({ alerts = [] }) {
         <h3 className="text-sm font-semibold text-gray-300">Recent Alerts</h3>
         <Link
           to="/alerts"
-          className="text-xs text-emerald-400 hover:underline"
+          className="text-xs text-neon-400 hover:underline"
         >
           View all
         </Link>

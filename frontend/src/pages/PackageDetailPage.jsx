@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 
-import api from '../services/api';
+import { getPackageDetail } from '../services/api';
 import Loader from '../components/common/Loader';
 import RiskScore from '../components/PackageAnalysis/RiskScore';
 import EvidenceCard from '../components/PackageAnalysis/EvidenceCard';
@@ -20,8 +20,7 @@ export default function PackageDetailPage() {
     let cancelled = false;
     setLoading(true);
 
-    api
-      .getPackageDetail(id)
+    getPackageDetail(id)
       .then((res) => {
         if (!cancelled) setData(res);
       })

@@ -28,26 +28,30 @@ export default function Navbar() {
 
   return (
     <nav
-      className={`fixed left-0 top-16 z-20 flex h-[calc(100vh-4rem)] flex-col border-r border-gray-700 bg-gray-900 transition-all duration-200 ${
+      className={`fixed left-0 top-20 z-20 flex h-[calc(100vh-5rem)] flex-col border-r-2 border-outline-variant bg-surface-container-lowest transition-none ${
         sidebarOpen ? 'w-52' : 'w-16'
       }`}
     >
-      <ul className="mt-4 flex flex-1 flex-col gap-1 px-2">
+      <ul className="mt-4 flex flex-1 flex-col gap-0">
         {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
           <li key={to}>
             <NavLink
               to={to}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                `flex items-center gap-3 px-4 py-4 text-sm font-headline font-bold tracking-widest uppercase transition-none ${
                   isActive
-                    ? 'bg-emerald-600/20 text-emerald-400'
-                    : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                    ? 'border-l-2 border-primary-container text-primary-container bg-surface-container-highest'
+                    : 'text-outline hover:text-on-surface hover:bg-surface-variant border-l-2 border-transparent'
                 }`
               }
               title={label}
             >
-              <Icon size={20} className="shrink-0" />
-              {sidebarOpen && <span>{label}</span>}
+              {({ isActive }) => (
+                <>
+                  <Icon size={20} className="shrink-0" strokeWidth={isActive ? 2.5 : 2} />
+                  {sidebarOpen && <span className="pt-0.5">{label}</span>}
+                </>
+              )}
             </NavLink>
           </li>
         ))}

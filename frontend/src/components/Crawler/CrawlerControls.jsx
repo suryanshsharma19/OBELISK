@@ -41,7 +41,7 @@ export default function CrawlerControls({ isRunning, onRefresh }) {
         value={registry}
         onChange={(e) => setRegistry(e.target.value)}
         disabled={isRunning}
-        className="rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-gray-300 focus:border-emerald-500 focus:outline-none disabled:opacity-50"
+        className="rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-gray-300 focus:border-neon-500 focus:outline-none disabled:opacity-50"
       >
         {REGISTRIES.map((r) => (
           <option key={r} value={r}>{r}</option>
@@ -61,7 +61,7 @@ export default function CrawlerControls({ isRunning, onRefresh }) {
         <button
           onClick={handleStart}
           disabled={loading}
-          className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          className="flex items-center gap-2 rounded-lg bg-neon-600 px-4 py-2 text-sm font-medium text-white hover:bg-neon-700 disabled:opacity-50"
         >
           <Play size={16} />
           {loading ? 'Starting…' : 'Start Crawler'}
