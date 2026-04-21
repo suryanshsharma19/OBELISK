@@ -5,6 +5,11 @@ WORKDIR /app
 # Copy requirements
 COPY requirements.txt .
 
+# Install Docker CLI for sandbox execution from inside the backend container.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends docker.io && \
+    rm -rf /var/lib/apt/lists/*
+
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
