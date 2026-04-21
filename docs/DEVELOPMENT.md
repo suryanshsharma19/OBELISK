@@ -78,6 +78,18 @@ cd backend
 python scripts/benchmark_analyze.py --mode e2e --samples 40 --warmup 10 --enforce-under-ms 250
 ```
 
+- External repository dependency gate (OBELISK scanner adapter):
+
+```bash
+python scripts/obelisk_ci_scan.py \
+	--repo-path /path/to/target/repo \
+	--api-base-url https://obelisk.example.com \
+	--auth-username "$OBELISK_AUTH_USERNAME" \
+	--auth-password "$OBELISK_AUTH_PASSWORD" \
+	--risk-threshold 60 \
+	--block-threat-levels high,critical
+```
+
 - Optional load validation against a running backend:
 
 ```bash

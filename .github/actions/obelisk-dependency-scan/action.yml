@@ -1,0 +1,134 @@
+name: OBELISK Dependency Scan
+description: Scan repo dependencies with OBELISK and block CI by policy
+
+inputs:
+  api_base_url:
+    description: OBELISK backend base URL
+    required: true
+  auth_username:
+    description: OBELISK API username
+    required: true
+  auth_password:
+    description: OBELISK API password
+    required: true
+  repo_path:
+    description: Path to target repository checkout
+    required: false
+    default: .
+  risk_threshold:
+    description: Block when risk_score is greater than or equal to this threshold
+    required: false
+    default: "60"
+  block_threat_levels:
+    description: Comma-separated threat levels to block
+    required: false
+    default: high,critical
+  include_dev_dependencies:
+    description: Include dev dependencies in scan
+    required: false
+    default: "true"
+  scan_changed_code:
+    description: Analyze changed source files from git diff
+    required: false
+    default: "true"
+  git_diff_range:
+    description: Explicit git diff range for changed-code scan
+    required: false
+    default: ""
+  fail_on_missing_diff_range:
+    description: Fail if changed-code scan is enabled but diff range cannot be inferred
+    required: false
+    default: "false"
+  allowed_code_extensions:
+    description: Comma-separated file extensions for changed-code scanning
+    required: false
+    default: .py,.js,.jsx,.ts,.tsx,.mjs,.cjs
+  max_changed_files:
+    description: Maximum changed files to inspect
+    required: false
+    default: "300"
+  max_code_file_bytes:
+    description: Maximum bytes per changed file for code scanning
+    required: false
+    default: "200000"
+  max_code_chars:
+    description: Maximum characters submitted per changed file
+    required: false
+    default: "30000"
+  fail_on_unresolved:
+    description: Fail if exact versions cannot be resolved from manifests
+    required: false
+    default: "true"
+  fail_on_scan_error:
+    description: Fail if analyze API calls error
+    required: false
+    default: "true"
+  mark_blocked_in_ci:
+    description: Mark related alerts as blocked_in_ci=true
+    required: false
+    default: "true"
+  output_json:
+    description: Output JSON report path
+    required: false
+    default: obelisk-scan-report.json
+
+runs:
+  using: composite
+  steps:
+    - name: Run OBELISK dependency scanner
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        BOOL_ARGS=()
+
+        if [[ "${{ inputs.include_dev_dependencies }}" == "true" ]]; then
+          BOOL_ARGS+=(--include-dev-dependencies)
+        else
+          BOOL_ARGS+=(--no-include-dev-dependencies)
+        fi
+
+        if [[ "${{ inputs.scan_changed_code }}" == "true" ]]; then
+          BOOL_ARGS+=(--scan-changed-code)
+        else
+          BOOL_ARGS+=(--no-scan-changed-code)
+        fi
+
+        if [[ "${{ inputs.fail_on_missing_diff_range }}" == "true" ]]; then
+          BOOL_ARGS+=(--fail-on-missing-diff-range)
+        else
+          BOOL_ARGS+=(--no-fail-on-missing-diff-range)
+        fi
+
+        if [[ "${{ inputs.fail_on_unresolved }}" == "true" ]]; then
+          BOOL_ARGS+=(--fail-on-unresolved)
+        else
+          BOOL_ARGS+=(--no-fail-on-unresolved)
+        fi
+
+        if [[ "${{ inputs.fail_on_scan_error }}" == "true" ]]; then
+          BOOL_ARGS+=(--fail-on-scan-error)
+        else
+          BOOL_ARGS+=(--no-fail-on-scan-error)
+        fi
+
+        if [[ "${{ inputs.mark_blocked_in_ci }}" == "true" ]]; then
+          BOOL_ARGS+=(--mark-blocked-in-ci)
+        else
+          BOOL_ARGS+=(--no-mark-blocked-in-ci)
+        fi
+
+        python3 "$GITHUB_ACTION_PATH/../../../scripts/obelisk_ci_scan.py" \
+          --repo-path "${{ inputs.repo_path }}" \
+          --api-base-url "${{ inputs.api_base_url }}" \
+          --auth-username "${{ inputs.auth_username }}" \
+          --auth-password "${{ inputs.auth_password }}" \
+          --risk-threshold "${{ inputs.risk_threshold }}" \
+          --block-threat-levels "${{ inputs.block_threat_levels }}" \
+          --git-diff-range "${{ inputs.git_diff_range }}" \
+          --allowed-code-extensions "${{ inputs.allowed_code_extensions }}" \
+          --max-changed-files "${{ inputs.max_changed_files }}" \
+          --max-code-file-bytes "${{ inputs.max_code_file_bytes }}" \
+          --max-code-chars "${{ inputs.max_code_chars }}" \
+          --output-json "${{ inputs.output_json }}" \
+          "${BOOL_ARGS[@]}"

@@ -1,0 +1,82 @@
+name: OBELISK Scan Example
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  dependency-security-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve git diff range for code scan
+        id: diff
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "range=${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          BEFORE_SHA="${{ github.event.before }}"
+          if [[ -n "$BEFORE_SHA" && "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
+            echo "range=${BEFORE_SHA}...${{ github.sha }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "range=HEAD~1...HEAD" >> "$GITHUB_OUTPUT"
+
+      - name: Verify required scanner secrets
+        id: prereq
+        env:
+          OBELISK_API_BASE_URL: ${{ secrets.OBELISK_API_BASE_URL }}
+          OBELISK_AUTH_USERNAME: ${{ secrets.OBELISK_AUTH_USERNAME }}
+          OBELISK_AUTH_PASSWORD: ${{ secrets.OBELISK_AUTH_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${OBELISK_API_BASE_URL}" || -z "${OBELISK_AUTH_USERNAME}" || -z "${OBELISK_AUTH_PASSWORD}" ]]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "OBELISK scanner secrets are not configured; skipping example run."
+            exit 0
+          fi
+
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+
+      - name: Run OBELISK dependency scan (local action path)
+        if: steps.prereq.outputs.enabled == 'true'
+        uses: ./.github/actions/obelisk-dependency-scan
+        with:
+          api_base_url: ${{ secrets.OBELISK_API_BASE_URL }}
+          auth_username: ${{ secrets.OBELISK_AUTH_USERNAME }}
+          auth_password: ${{ secrets.OBELISK_AUTH_PASSWORD }}
+          risk_threshold: "60"
+          block_threat_levels: high,critical
+          include_dev_dependencies: "true"
+          scan_changed_code: "true"
+          git_diff_range: ${{ steps.diff.outputs.range }}
+          fail_on_missing_diff_range: "false"
+          fail_on_unresolved: "true"
+          fail_on_scan_error: "true"
+          mark_blocked_in_ci: "true"
+          output_json: obelisk-scan-report.json
+
+      - name: Upload scanner report artifact
+        if: steps.prereq.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: obelisk-scan-report
+          path: obelisk-scan-report.json
+
+      - name: External repository usage reference
+        run: |
+          echo "For external repositories, use:"
+          echo "uses: suryanshsharma19/OBELISK/.github/actions/obelisk-dependency-scan@main"
