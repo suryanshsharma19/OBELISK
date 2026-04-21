@@ -26,8 +26,14 @@ setup:
 	@echo "Setting up OBELISK..."
 	cd backend && python -m venv venv
 	cd backend && . venv/bin/activate && pip install -r requirements.txt
+	@echo "Syncing ML Models..."
+	cd backend && .venv311/bin/python scripts/download_models.py
 	cd frontend && npm install
 	@echo "Setup complete!"
+
+sync-models:
+	@echo "Pushing ML models to HuggingFace..."
+	cd backend && .venv311/bin/python scripts/upload_models.py
 
 dev:
 	docker-compose up
