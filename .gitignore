@@ -32,6 +32,10 @@ htmlcov/
 .tox/
 nosetests.xml
 pytest_cache/
+test_obelisk.db
+backend/test_obelisk.db
+*.sqlite
+*.sqlite3
 
 # Type checking
 .mypy_cache/
@@ -47,6 +51,10 @@ backend/.env
 frontend/.env
 *.secret
 secrets/
+
+# Kubernetes secrets (keep only template manifest in git)
+infrastructure/kubernetes/secrets*.yaml
+!infrastructure/kubernetes/secrets.example.yaml
 
 # Node / Frontend
 node_modules/
@@ -141,6 +149,12 @@ temp/
 
 # Generated large storage report
 reports/storage/all_file_sizes.tsv
+
+# Local-only adversarial/runtime validation outputs
+reports/adversarial/*.json
+
+# Local-only storage inventory reports
+reports/storage/*.tsv
 
 # Local-only integrity scan outputs
 reports/non_git_integrity_scan*.txt
