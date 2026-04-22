@@ -92,17 +92,17 @@ Each detector runs in parallel and feeds into a weighted risk scorer with calibr
 └────────────────────────────┬────────────────────────────────────┘
                              │ REST API + WebSocket
 ┌────────────────────────────▼────────────────────────────────────┐
-│                       FastAPI Backend                            │
-│                                                                  │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌───────┐ │
-│  │Typosquat │ │CodeBERT  │ │Behavioral│ │Isolation │ │  GNN  │ │
+│                       FastAPI Backend                           │
+│                                                                 │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐ │
+│  │Typosquat │ │CodeBERT  │ │Behavioral│ │Isolation │ │  GNN   │ │
 │  │Detector  │ │Analyzer  │ │Analyzer  │ │Forest    │ │Analyzer│ │
-│  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘ └───┬───┘ │
+│  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘ └───┬────┘ │
 │       └─────────────┴────────────┴────────────┴───────────┘     │
-│                          Risk Scorer                             │
+│                          Risk Scorer                            │
 └──────┬───────────────────┬───────────────────┬──────────────────┘
        │                   │                   │
-  ┌────▼────┐        ┌─────▼─────┐       ┌────▼────┐
+  ┌────▼─────┐        ┌─────▼─────┐       ┌────▼────┐
   │PostgreSQL│        │   Neo4j   │       │  Redis  │
   │(Packages,│        │(Dependency│       │ (Cache) │
   │Analyses, │        │  Graphs)  │       │         │
