@@ -11,6 +11,9 @@ RUN npm ci
 # Copy source
 COPY . .
 
+# Ensure runtime user can write webpack/eslint cache under node_modules
+RUN chown -R node:node /app
+
 # Drop root privileges
 USER node
 
