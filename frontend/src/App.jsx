@@ -26,9 +26,18 @@ const CrawlerPage = React.lazy(() =>
 
 export default function App() {
   const sidebarOpen = useSelector((s) => s.ui.sidebarOpen);
+  const theme = useSelector((s) => s.ui.theme);
+
+  React.useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, [theme]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-950 text-gray-100">
+    <div
+      className={`flex min-h-screen flex-col ${
+        theme === 'dark' ? 'bg-gray-950 text-gray-100' : 'bg-gray-100 text-gray-900'
+      }`}
+    >
       <Header />
       <Navbar />
 

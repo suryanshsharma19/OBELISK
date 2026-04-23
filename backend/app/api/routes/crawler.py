@@ -25,6 +25,7 @@ class CrawlerStartRequest(BaseModel):
 _crawler_state: dict[str, Any] = {
     "running": False,
     "task": None,
+    "started_at": None,
     "last_check": None,
     "packages_checked": 0,
     "threats_found": 0,
@@ -42,6 +43,7 @@ def get_crawler_snapshot() -> dict[str, Any]:
     return {
         "running": running,
         "is_running": running,
+        "started_at": _crawler_state.get("started_at"),
         "last_check": _crawler_state.get("last_check"),
         "packages_checked": checked,
         "packages_scanned": checked,
@@ -77,8 +79,49 @@ async def _run_crawler_cycle() -> dict[str, Any]:
             _crawler_state["packages_checked"] += scanned
             _crawler_state["threats_found"] += int(result.get("threats_found", 0) or 0)
 
+    # Reflect real detections from analyzed packages while crawler is active.
+    # This keeps UI threat counts tied to actual outcomes, not queued jobs.
+    since = _crawler_state.get("started_at")
+    _crawler_state["threats_found"] = await asyncio.to_thread(
+        _count_detected_threats,
+        selected_registry,
+        since,
+    )
+
     cycle_result["finished_at"] = datetime.now(timezone.utc).isoformat()
     return cycle_result
+
+
+def _count_detected_threats(registry: str, since_iso: str | None) -> int:
+    from sqlalchemy import func
+
+    from app.db.models import Package, ThreatLevel
+    from app.db.session import SessionLocal
+
+    if not since_iso:
+        return 0
+
+    try:
+        since = datetime.fromisoformat(str(since_iso).replace("Z", "+00:00"))
+    except ValueError:
+        return 0
+
+    db = SessionLocal()
+    try:
+        query = db.query(func.count(Package.id)).filter(
+            Package.analyzed_at >= since,
+            (Package.is_malicious.is_(True)) | (
+                Package.threat_level.in_([ThreatLevel.HIGH, ThreatLevel.CRITICAL])
+            ),
+        )
+        if registry in {"npm", "pypi"}:
+            query = query.filter(Package.registry == registry)
+        return int(query.scalar() or 0)
+    except Exception as exc:
+        logger.warning("Crawler threat count refresh failed: %s", exc)
+        return int(_crawler_state.get("threats_found", 0) or 0)
+    finally:
+        db.close()
 
 
 async def _crawler_loop() -> None:
@@ -120,7 +163,8 @@ async def start_crawler(
     _crawler_state["registry"] = payload.registry
     _crawler_state["interval_seconds"] = payload.interval_seconds or settings.crawler_poll_interval_seconds
     _crawler_state["running"] = True
-    _crawler_state["last_check"] = datetime.now(timezone.utc).isoformat()
+    _crawler_state["started_at"] = datetime.now(timezone.utc).isoformat()
+    _crawler_state["last_check"] = _crawler_state["started_at"]
     _crawler_state["packages_checked"] = 0
     _crawler_state["threats_found"] = 0
     _crawler_state["last_error"] = None

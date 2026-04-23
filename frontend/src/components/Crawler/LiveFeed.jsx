@@ -32,7 +32,7 @@ export default function LiveFeed() {
           Waiting for events…
         </p>
       ) : (
-        <div className="max-h-72 space-y-2 overflow-y-auto">
+        <div className="max-h-72 space-y-2 overflow-y-auto overflow-x-hidden">
           {messages.map((msg, i) => (
             <div
               key={`${msg.timestamp || ''}-${i}`}
@@ -41,7 +41,7 @@ export default function LiveFeed() {
               <span className="shrink-0 text-xs text-gray-600">
                 {msg.timestamp ? timeAgo(msg.timestamp) : '#'}
               </span>
-              <span className="text-xs text-gray-300">
+              <span className="min-w-0 break-words whitespace-pre-wrap text-xs text-gray-300">
                 {msg.message || JSON.stringify(msg)}
               </span>
             </div>
