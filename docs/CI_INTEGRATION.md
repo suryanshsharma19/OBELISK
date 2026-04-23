@@ -121,6 +121,64 @@ For a runnable in-repo example, see:
 - `OBELISK_AUTH_USERNAME`
 - `OBELISK_AUTH_PASSWORD`
 
+## Using This Feature In The OBELISK Repository
+
+This repository already includes a workflow that demonstrates PR/commit security gating:
+
+- `.github/workflows/obelisk-scan-example.yml`
+
+It runs on:
+
+- `pull_request`
+- `push` to `main`
+
+### 1. Configure scanner secrets
+
+In GitHub repository settings, add:
+
+- `OBELISK_API_BASE_URL`
+- `OBELISK_AUTH_USERNAME`
+- `OBELISK_AUTH_PASSWORD`
+
+Without these secrets, the example workflow logs a skip message and does not execute the scan step.
+
+### 2. Trigger on PR or commit
+
+Create a pull request or push a commit to `main`. The workflow resolves git diff range and scans:
+
+- Dependency manifests and lockfiles
+- Changed code files from git diff
+
+### 3. Read results
+
+Open the workflow run and inspect:
+
+- Job status (`passed`, `blocked`, or `failed`)
+- Uploaded artifact `obelisk-scan-report` for full JSON output
+
+### 4. Enforce before merge (required checks)
+
+To make this a hard pre-merge gate:
+
+1. Go to branch protection rules for `main`.
+2. Enable required status checks.
+3. Mark at least these checks as required:
+  - `Backend Tests / test`
+  - `Frontend Tests / test`
+  - `OBELISK Scan Example / dependency-security-gate`
+
+Once required, PRs cannot be merged until all selected checks pass.
+
+### 5. Tune policy
+
+Adjust workflow inputs in `.github/workflows/obelisk-scan-example.yml`:
+
+- `risk_threshold`
+- `block_threat_levels`
+- `fail_on_unresolved`
+- `fail_on_scan_error`
+- `scan_changed_code`
+
 ## Notes
 
 - For deterministic and scalable CI scans, keep dependency lockfiles committed.

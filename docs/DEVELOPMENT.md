@@ -153,6 +153,26 @@ From repository root:
 4. Ensure benchmark and lint checks pass.
 5. Open PR with concise risk and test summary.
 
+## CI/CD PR and Commit Gates
+
+CI runs on pull requests and commits to enforce quality and security before merge:
+
+- Backend checks: `.github/workflows/backend-tests.yml`
+- Frontend checks: `.github/workflows/frontend-tests.yml`
+- OBELISK scan gate: `.github/workflows/obelisk-scan-example.yml`
+
+Usage flow:
+
+1. Ensure repository scanner secrets are configured:
+	- `OBELISK_API_BASE_URL`
+	- `OBELISK_AUTH_USERNAME`
+	- `OBELISK_AUTH_PASSWORD`
+2. Open a PR (or push to `main`) to trigger CI.
+3. Review logs and artifact `obelisk-scan-report` in GitHub Actions.
+4. Keep branch protection enabled with required checks so merges are blocked on failures.
+
+For scanner behavior and reusable action usage, see `docs/CI_INTEGRATION.md`.
+
 ## Debugging Notes
 
 - For backend dependency compatibility, prefer Python 3.11 environments.

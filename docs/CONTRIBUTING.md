@@ -11,6 +11,17 @@ OBELISK is a security-focused project. Every contribution should improve correct
 3. Add tests for every behavioral change.
 4. Run local quality checks before opening PR.
 
+## CI Gates On PRs And Commits
+
+OBELISK uses CI gates on both pull requests and commits:
+
+- Backend checks (`.github/workflows/backend-tests.yml`)
+- Frontend checks (`.github/workflows/frontend-tests.yml`)
+- OBELISK security scan gate (`.github/workflows/obelisk-scan-example.yml`)
+
+For protected branches, merge should be blocked until required checks pass.
+See `docs/CI_INTEGRATION.md` for setup details, required secrets, and policy tuning.
+
 ## Local Checks Before PR
 
 Backend:
@@ -38,6 +49,11 @@ python scripts/smoke_endpoints.py
 ```
 
 CI additionally enforces `python scripts/verify_runtime_security.py --strict --require-non-local`.
+
+Dependency guidance for CI scan reliability:
+
+- Commit lockfiles (`package-lock.json`, `poetry.lock`, `Pipfile.lock`) when dependencies change.
+- Prefer exact versions in `requirements*.txt` (`==` or `===`) to avoid unresolved-scan failures.
 
 Performance gate:
 

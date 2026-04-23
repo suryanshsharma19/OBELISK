@@ -32,6 +32,7 @@
 - [Local Development](#local-development)
 - [API Surface](#api-surface)
 - [Testing](#testing)
+- [CI/CD PR and Commit Security Gate](#cicd-pr-and-commit-security-gate)
 - [ML Operations](#ml-operations)
 - [Deployment](#deployment)
 - [Documentation](#documentation)
@@ -331,6 +332,37 @@ make adversarial-check       # Synthetic malware adversarial suite
 make load-validate           # Backend concurrency/load testing
 make benchmark-analyze       # Analyze endpoint latency benchmarks
 ```
+
+---
+
+## CI/CD PR and Commit Security Gate
+
+OBELISK includes automated CI gates for pull requests and commits to catch security, quality, and runtime regressions before merge.
+
+### Included workflows
+
+- `Backend Tests` (`.github/workflows/backend-tests.yml`) on `push` and `pull_request`
+- `Frontend Tests` (`.github/workflows/frontend-tests.yml`) on `push` and `pull_request`
+- `OBELISK Scan Example` (`.github/workflows/obelisk-scan-example.yml`) on `pull_request`, `push` to `main`, and manual dispatch
+
+### What the OBELISK scan gate enforces
+
+- Blocks CI when `threat_level` is `high` or `critical` (configurable)
+- Blocks CI when `risk_score >= 60` (configurable)
+- Fails on unresolved dependency versions in strict mode
+- Fails on scanner/API errors in strict mode
+
+### How to use this feature in your repository
+
+1. Configure repository secrets:
+  - `OBELISK_API_BASE_URL`
+  - `OBELISK_AUTH_USERNAME`
+  - `OBELISK_AUTH_PASSWORD`
+2. Open a PR or push a commit.
+3. Verify workflow results in GitHub Actions.
+4. Enable branch protection and mark CI checks as required to block merge when checks fail.
+
+See the full usage guide in [docs/CI_INTEGRATION.md](docs/CI_INTEGRATION.md), including external repository setup and reusable action details.
 
 ---
 
