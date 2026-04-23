@@ -11,6 +11,12 @@ jobs:
   adversarial-suite:
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    env:
+      AUTH_USERNAME: admin
+      AUTH_PASSWORD: CI_Adversarial_StrongPass_2026!
+      SECRET_KEY: CI_ADVERSARIAL_SECRET_KEY_2026_SUPER_LONG_VALUE_1234567890
+      POSTGRES_PASSWORD: obelisk
+      NEO4J_PASSWORD: obelisk_ci_neo4j_2026
 
     steps:
       - uses: actions/checkout@v4
@@ -31,6 +37,8 @@ jobs:
           set -euo pipefail
           docker compose up -d --build postgres neo4j redis backend
           python scripts/adversarial_suite.py \
+            --username "${AUTH_USERNAME}" \
+            --password "${AUTH_PASSWORD}" \
             --require-docker-sandbox \
             --output reports/adversarial/before.json
 
@@ -41,6 +49,8 @@ jobs:
           set -euo pipefail
           docker compose up -d --build backend
           python scripts/adversarial_suite.py \
+            --username "${AUTH_USERNAME}" \
+            --password "${AUTH_PASSWORD}" \
             --require-docker-sandbox \
             --baseline reports/adversarial/before.json \
             --output reports/adversarial/after.json \
