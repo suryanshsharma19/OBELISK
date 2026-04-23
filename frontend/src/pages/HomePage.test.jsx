@@ -12,7 +12,8 @@ describe('HomePage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText(/protect your supply chain/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /analyze a package/i })).toBeInTheDocument();
+    expect(screen.getByText(/ai-powered/i)).toBeInTheDocument();
+    expect(screen.getByText(/neutralize malicious dependencies/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /scan your dependencies/i })).toBeInTheDocument();
   });
 });

@@ -51,22 +51,7 @@ jobs:
         run: |
           set -euo pipefail
           if [[ -f reports/adversarial/after.json ]]; then
-            python - <<'PY'
-import json
-from pathlib import Path
-
-after_path = Path("reports/adversarial/after.json")
-report = json.loads(after_path.read_text())
-metrics = report.get("metrics", {})
-delta = report.get("before_after_delta", {})
-
-print("Adversarial overall pass:", metrics.get("overall_pass"))
-print("Docker mode samples:", f"{metrics.get('docker_mode_count', 0)}/{metrics.get('sample_count', 0)}")
-print("Benign max risk:", metrics.get("benign_max_risk"))
-print("Malicious detected:", f"{metrics.get('malicious_detected_count', 0)}/{metrics.get('malicious_sample_count', 0)}")
-print("Avg benign risk before/after:", f"{delta.get('avg_benign_risk_before')} -> {delta.get('avg_benign_risk_after')}")
-print("Avg malicious risk before/after:", f"{delta.get('avg_malicious_risk_before')} -> {delta.get('avg_malicious_risk_after')}")
-PY
+            python -c "import json; from pathlib import Path; report = json.loads(Path('reports/adversarial/after.json').read_text()); metrics = report.get('metrics', {}); delta = report.get('before_after_delta', {}); print('Adversarial overall pass:', metrics.get('overall_pass')); print('Docker mode samples:', f\"{metrics.get('docker_mode_count', 0)}/{metrics.get('sample_count', 0)}\"); print('Benign max risk:', metrics.get('benign_max_risk')); print('Malicious detected:', f\"{metrics.get('malicious_detected_count', 0)}/{metrics.get('malicious_sample_count', 0)}\"); print('Avg benign risk before/after:', f\"{delta.get('avg_benign_risk_before')} -> {delta.get('avg_benign_risk_after')}\"); print('Avg malicious risk before/after:', f\"{delta.get('avg_malicious_risk_before')} -> {delta.get('avg_malicious_risk_after')}\")"
           else
             echo "No tuned report generated."
           fi
