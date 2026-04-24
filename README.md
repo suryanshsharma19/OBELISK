@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/diagrams/obelisk.svg" alt="OBELISK logo" width="140" />
+  <img src="docs/diagrams/obelisk.png" alt="OBELISK logo" width="140" />
 </p>
 
 <h1 align="center">OBELISK</h1>
