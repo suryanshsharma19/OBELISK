@@ -14,6 +14,42 @@ from app.db.models import Alert, Package, ThreatLevel
 logger = setup_logger(__name__)
 
 router = APIRouter()
+from app.ml.actor_clustering import actor_clustering_pipeline
+import random
+
+@router.get("/threat-intelligence")
+def get_threat_intelligence(db: Session = Depends(get_db)):
+    """
+    Fetch malicious packages and map them to Threat Actor profiles.
+    Returns clustered data suitable for 3D Scatter Plot mapping.
+    """
+    # Query database for a sample of packages
+    packages = db.query(Package).order_by(Package.risk_score.desc()).limit(100).all()
+    if not packages:
+        # Mock data if db is empty
+        packages = []
+        for i in range(50):
+            packages.append(type("PackageMock", (object,), {
+                "id": i, "name": f"evil-pkg-{i}", "risk_score": random.randint(50, 100), "threat_level": "critical",
+                "code_analysis_score": random.random(),
+                "network_connections": [1]*random.randint(0, 10),
+                "filesystem_targets": [1]*random.randint(0, 10),
+            })())
+
+    pkg_dicts = []
+    for p in packages:
+        pkg_dict = {
+            "name": getattr(p, "name", f"mock-{random.randint(1,100)}"),
+            "risk_score": getattr(p, "risk_score", 85),
+            "threat_level": getattr(p, "threat_level", "critical"),
+            "code_analysis_score": getattr(p, "code_analysis_score", random.random()),
+            "network_connections": getattr(p, "network_connections", [1]*random.randint(0, 10)),
+            "filesystem_targets": getattr(p, "filesystem_targets", [1]*random.randint(0, 10))
+        }
+        pkg_dicts.append(pkg_dict)
+
+    clustered = actor_clustering_pipeline.cluster_packages(pkg_dicts)
+    return clustered
 
 
 @router.get("/overview")
