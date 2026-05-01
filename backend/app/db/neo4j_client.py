@@ -153,5 +153,22 @@ class Neo4jClient:
         """
         return self.run_query(query, {"name": name})
 
+    def get_blast_radius(self, pkg_name: str, max_depth: int = 4) -> list[dict[str, Any]]:
+        """
+        BFS Cypher Query to fetch dependents.
+        Demonstrating cascading failure of a compromised package across its dependent ecosystem.
+        """
+        query = f"""
+        MATCH p=(a:Package {{name: $pkg_name}})-[:DEPENDS_ON*1..{int(max_depth)}]->(b:Package)
+        RETURN 
+            [node in nodes(p) | node.name] AS path_nodes,
+            b.name       AS name,
+            b.version    AS version,
+            b.risk_score AS risk_score,
+            length(p)    AS depth
+        ORDER BY depth ASC
+        """
+        return self.run_query(query, {"pkg_name": pkg_name})
+
 
 neo4j_client = Neo4jClient()
