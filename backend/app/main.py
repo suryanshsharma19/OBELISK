@@ -181,6 +181,7 @@ from app.api.routes.alerts import router as alerts_router      # noqa: E402
 from app.api.routes.crawler import router as crawler_router    # noqa: E402
 from app.api.routes.websocket import router as ws_router       # noqa: E402
 from app.api.routes.graph import router as graph_router        # noqa: E402
+from app.api.routes.forensics import router as forensics_router # noqa: E402
 
 app.include_router(health_router, tags=["health"])
 app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
@@ -190,6 +191,7 @@ app.include_router(alerts_router, prefix="/api/alerts", tags=["alerts"])
 app.include_router(crawler_router, prefix="/api/crawler", tags=["crawler"])
 app.include_router(ws_router, tags=["websocket"])
 app.include_router(graph_router, prefix="/api/v1/graph", tags=["graph"])
+app.include_router(forensics_router, prefix="/api/v1/forensics", tags=["forensics"])
 
 
 @app.get("/")
