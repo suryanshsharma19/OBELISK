@@ -104,7 +104,7 @@ export default function ThreatIntelligence() {
 
       <div className="flex-1 w-full rounded-xl overflow-hidden shadow-2xl border border-slate-700 bg-slate-800">
         <Plot
-          data={plotData}
+          data={plotData as any}
           layout={layout as any}
           useResizeHandler={true}
           style={{ width: '100%', height: '100%' }}
