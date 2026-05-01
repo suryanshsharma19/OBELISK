@@ -3,7 +3,7 @@
  * optional code viewer, and dependency graph.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import RiskScore from './RiskScore';
 import EvidenceCard from './EvidenceCard';
@@ -45,6 +45,8 @@ function buildGraphFromDetection(pkg, detectionDetails) {
 
 export default function AnalysisResult() {
   const { analysisResult, analyzing } = useSelector((s) => s.packages);
+  const [neutralizing, setNeutralizing] = useState(false);
+  const [downloadUrl, setDownloadUrl] = useState('');
 
   if (analyzing) {
     return <Loader text="Running detectors…" />;
@@ -69,19 +71,62 @@ export default function AnalysisResult() {
 
   const detectors = Object.entries(detectionDetails);
 
+  const handleNeutralize = async () => {
+    setNeutralizing(true);
+    try {
+      const pkg_id = pkg.id || analysisResult.id || pkg.name || 'unknown';
+      const token = localStorage.getItem('obelisk_token');
+      const response = await fetch(`/api/v1/packages/${pkg_id}/neutralize`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` })
+        }
+      });
+      const data = await response.json();
+      if (data.cleanUrl) {
+          setDownloadUrl(data.cleanUrl);
+      }
+    } catch (err) {
+      console.error('Failed to neutralize package:', err);
+    } finally {
+      setNeutralizing(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Risk score overview */}
-      <div className="flex flex-col items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 p-6 sm:flex-row sm:gap-8">
-        <RiskScore score={riskScore} threatLevel={threatLevel} size="large" />
-        <div className="space-y-1 text-center sm:text-left">
-          <p className="text-lg font-bold text-white">
-            {(pkg.name || analysisResult.name || 'package')}@{(pkg.version || analysisResult.version || 'unknown')}
-          </p>
-          <p className="text-sm text-gray-400">
-            Overall confidence: {Math.round(confidence * 100)}%
-          </p>
+      <div className="flex flex-col items-center justify-between gap-2 rounded-xl border border-gray-700 bg-gray-800 p-6 sm:flex-row sm:gap-8">
+        <div className="flex items-center gap-8">
+            <RiskScore score={riskScore} threatLevel={threatLevel} size="large" />
+            <div className="space-y-1 text-center sm:text-left">
+            <p className="text-lg font-bold text-white">
+                {(pkg.name || analysisResult.name || 'package')}@{(pkg.version || analysisResult.version || 'unknown')}
+            </p>
+            <p className="text-sm text-gray-400">
+                Overall confidence: {Math.round(confidence * 100)}%
+            </p>
+            </div>
         </div>
+
+        {riskScore > 75 && (
+            <div className="flex flex-col items-end gap-2">
+                <button
+                  onClick={handleNeutralize}
+                  disabled={neutralizing || !!downloadUrl}
+                  className="flex items-center gap-2 rounded bg-purple-600 px-4 py-2 font-bold text-white transition hover:bg-purple-700 disabled:opacity-50"
+                  title="Surgically remove AST CodeBERT flagged malicious scopes"
+                >
+                  {neutralizing ? 'Neutralizing...' : downloadUrl ? 'Neutralized' : 'Disarm & Download'}
+                </button>
+                {downloadUrl && (
+                    <a href={downloadUrl} download className="text-sm text-green-400 hover:text-green-300 underline font-mono">
+                      Download Safe Source (.tar.gz)
+                    </a>
+                )}
+            </div>
+        )}
       </div>
 
       {/* Detector evidence cards */}

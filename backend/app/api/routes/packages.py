@@ -1,8 +1,10 @@
 """Package routes - analyse, list, and retrieve package details."""
 
 from typing import Optional
+import os
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import enforce_rate_limit, get_current_user, get_db
@@ -16,12 +18,37 @@ from app.schemas.package import (
 )
 from app.models.package import PackageResponse
 from app.services import analysis_service
+from app.services.neutralizer_service import neutralizer_service
 from app.utils.constants import DETECTION_WEIGHTS
 from app.utils.formatters import format_alert_summary
 
 logger = setup_logger(__name__)
 
 router = APIRouter()
+
+@router.get("/download/{filename}")
+async def download_clean_package(filename: str):
+    file_path = f"/tmp/obelisk_storage/{filename}"
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found or still generating")
+    return FileResponse(path=file_path, filename=filename, media_type='application/gzip')
+
+@router.post("/{pkg_id}/neutralize")
+async def neutralize_package(
+    pkg_id: str,
+    background_tasks: BackgroundTasks,
+    current_user = Depends(get_current_user)
+):
+    src_path = f"/tmp/obelisk_storage/{pkg_id}.tar.gz"
+    out_path = f"/tmp/obelisk_storage/clean_{pkg_id}.tar.gz"
+    
+    background_tasks.add_task(
+        neutralizer_service.neutralize_python_package,
+        src_path,
+        out_path
+    )
+    return {"message": "Neutralization queued", "cleanUrl": f"/api/packages/download/clean_{pkg_id}"}
+
 
 
 def _extract_dependency_items(raw_dependencies: object) -> list[dict[str, object]]:
