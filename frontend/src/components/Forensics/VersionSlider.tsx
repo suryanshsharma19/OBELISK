@@ -16,6 +16,7 @@ interface VersionSliderProps {
 export const VersionSlider: React.FC<VersionSliderProps> = ({ pkgName }) => {
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [viewIndex, setViewIndex] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,7 +33,9 @@ export const VersionSlider: React.FC<VersionSliderProps> = ({ pkgName }) => {
         if (data.length > 0) {
           // Find first incident of high score or default to end
           const incidentIdx = data.findIndex((v: TimelineItem) => v.score > 75);
-          setCurrentIndex(incidentIdx !== -1 ? incidentIdx : data.length - 1);
+          const defaultIdx = incidentIdx !== -1 ? incidentIdx : data.length - 1;
+          setCurrentIndex(defaultIdx);
+          setViewIndex(defaultIdx);
         }
       } catch (err) {
         console.error('Failed to fetch forensics timeline:', err);
@@ -43,12 +46,22 @@ export const VersionSlider: React.FC<VersionSliderProps> = ({ pkgName }) => {
     fetchTimeline();
   }, [pkgName]);
 
+  // Debounce the viewer index so Monaco Editor isn't thrashed during range scrubbing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setViewIndex(currentIndex);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [currentIndex]);
+
   if (loading) return <div className="text-gray-400 p-4">Loading history forensics for {pkgName}...</div>;
   if (!timeline.length) return <div className="text-red-400 p-4">Failed to load history versions.</div>;
 
-  const currentVersion = timeline[currentIndex];
-  const originalCode = currentIndex > 0 
-    ? (timeline[currentIndex - 1].diff ? `# Safe state before compromise` : `# Original safe source file`) 
+  const currentVersion = timeline[currentIndex]; // For the UI sliders
+  const renderVersion = timeline[viewIndex]; // For the Heavy Monaco Component
+
+  const originalCode = viewIndex > 0 
+    ? (timeline[viewIndex - 1].diff ? `# Safe state before compromise` : `# Original safe source file`) 
     : `# Earliest retrieved version`;
 
   return (
@@ -86,15 +99,16 @@ export const VersionSlider: React.FC<VersionSliderProps> = ({ pkgName }) => {
       </div>
 
       <div className="mt-2 min-h-[500px]">
-        {currentVersion.score > 75 && currentVersion.malicious_file ? (
+        {renderVersion.score > 75 && renderVersion.malicious_file ? (
           <CodeDriftViewer 
-            filename={currentVersion.malicious_file} 
+            key={renderVersion.version}
+            filename={renderVersion.malicious_file} 
             originalCode={originalCode} 
-            modifiedCode={currentVersion.diff || ''} 
+            modifiedCode={renderVersion.diff || ''} 
           />
         ) : (
           <div className="h-[500px] w-full flex items-center justify-center bg-slate-900 rounded-xl border border-dashed border-green-800 text-green-400 font-mono tracking-tight text-xl opacity-70">
-            No Malicious Payloads Detected in v{currentVersion.version}
+            No Malicious Payloads Detected in v{renderVersion.version}
           </div>
         )}
       </div>
