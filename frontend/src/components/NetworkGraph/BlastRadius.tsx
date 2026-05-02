@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
+import { API_BASE_URL } from '../../utils/constants';
 
 interface BlastRadiusProps {
   pkgName: string;
@@ -32,7 +33,7 @@ export const BlastRadius: React.FC<BlastRadiusProps> = ({ pkgName }) => {
     setNodes(initialNodes);
     
     // Connect to SSE API
-    const eventSource = new EventSource(`/api/v1/graph/blast-radius/${pkgName}`);
+    const eventSource = new EventSource(`${API_BASE_URL}/api/v1/graph/blast-radius/${pkgName}`);
     
     eventSource.onmessage = (event) => {
       const parsedData = JSON.parse(event.data);

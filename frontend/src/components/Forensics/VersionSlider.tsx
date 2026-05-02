@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CodeDriftViewer } from './CodeDriftViewer';
+import { API_BASE_URL } from '../../utils/constants';
 
 interface TimelineItem {
   version: string;
@@ -21,7 +22,7 @@ export const VersionSlider: React.FC<VersionSliderProps> = ({ pkgName }) => {
     const fetchTimeline = async () => {
       try {
         const token = localStorage.getItem('obelisk_token');
-        const res = await fetch(`/api/v1/forensics/timeline/${pkgName}`, {
+        const res = await fetch(`${API_BASE_URL}/api/v1/forensics/timeline/${pkgName}`, {
           headers: {
              ...(token && { Authorization: `Bearer ${token}` })
           }
