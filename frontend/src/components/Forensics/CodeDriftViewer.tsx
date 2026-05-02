@@ -27,6 +27,7 @@ export const CodeDriftViewer: React.FC<CodeDriftViewerProps> = ({ originalCode, 
       </div>
       <div className="flex-1 w-full bg-slate-950">
         <DiffEditor
+          key={filename + modifiedCode}
           height="100%"
           language={getLanguage(filename)}
           original={originalCode}

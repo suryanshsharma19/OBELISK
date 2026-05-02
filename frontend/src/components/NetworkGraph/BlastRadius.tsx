@@ -85,10 +85,14 @@ export const BlastRadius: React.FC<BlastRadiusProps> = ({ pkgName }) => {
     const width = d3Container.current.parentElement?.clientWidth || 800;
     const height = d3Container.current.parentElement?.clientHeight || 600;
 
+    // Use viewBox to make sure it scales properly and set view space
+    svg.attr("viewBox", `0 0 ${width} ${height}`);
+
     const simulation = d3.forceSimulation<Node>(nodes)
       .force("link", d3.forceLink<Node, Link>(links).id(d => d.id).distance(100))
       .force("charge", d3.forceManyBody().strength(-300))
-      .force("center", d3.forceCenter(width / 2, height / 2));
+      .force("center", d3.forceCenter(width / 2, height / 2))
+      .force("collide", d3.forceCollide().radius(20).iterations(2));
 
     const link = svg.append("g")
       .attr("stroke-opacity", 0.6)
@@ -118,15 +122,16 @@ export const BlastRadius: React.FC<BlastRadiusProps> = ({ pkgName }) => {
       .text(d => d.id);
 
     simulation.on("tick", () => {
+      // Constrain nodes to stay within the SVG boundaries
+      node
+        .attr("cx", d => d.x = Math.max(15, Math.min(width - 15, d.x!)))
+        .attr("cy", d => d.y = Math.max(15, Math.min(height - 15, d.y!)));
+
       link
         .attr("x1", d => (d.source as Node).x!)
         .attr("y1", d => (d.source as Node).y!)
         .attr("x2", d => (d.target as Node).x!)
         .attr("y2", d => (d.target as Node).y!);
-
-      node
-        .attr("cx", d => d.x!)
-        .attr("cy", d => d.y!);
     });
 
     return () => {
