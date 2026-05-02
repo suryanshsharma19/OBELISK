@@ -14,8 +14,10 @@ from app.db.models import Alert, Package, ThreatLevel
 logger = setup_logger(__name__)
 
 router = APIRouter()
-from app.ml.actor_clustering import actor_clustering_pipeline
+from app.ml.actor_clustering import ActorClusteringPipeline
 import random
+
+actor_clustering_pipeline = ActorClusteringPipeline()
 
 @router.get("/threat-intelligence")
 def get_threat_intelligence(db: Session = Depends(get_db)):

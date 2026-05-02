@@ -17,8 +17,8 @@ async def stream_blast_radius(pkg_name: str) -> AsyncGenerator[str, None]:
     
     cache_key = f"blast_radius:{pkg_name}"
     cached_data = None
-    if redis._client:
-        cached_data = redis._client.get(cache_key)
+    if redis.client:
+        cached_data = redis.client.get(cache_key)
 
     if cached_data:
         data = json.loads(cached_data)
@@ -47,8 +47,8 @@ async def stream_blast_radius(pkg_name: str) -> AsyncGenerator[str, None]:
         })
 
     sorted_layers = [layers[k] for k in sorted(layers.keys())]
-    if redis._client:
-        redis._client.setex(cache_key, 3600, json.dumps(sorted_layers))
+    if redis.client:
+        redis.client.setex(cache_key, 3600, json.dumps(sorted_layers))
     
     for layer_data in sorted_layers:
         yield f"data: {json.dumps({'event': 'layer', 'data': layer_data})}\n\n"
