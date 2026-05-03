@@ -18,6 +18,9 @@ import AlertsPage from './pages/AlertsPage';
 import SettingsPage from './pages/SettingsPage';
 import PackageDetailPage from './pages/PackageDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
+import BlastRadiusPage from './pages/BlastRadiusPage';
+import ForensicsPage from './pages/ForensicsPage';
+import ThreatIntelligence from './views/ThreatIntelligence';
 
 // Lazy-load the crawler page to keep initial bundle small
 const CrawlerPage = React.lazy(() =>
@@ -57,6 +60,9 @@ export default function App() {
               <Route path="/packages/:id" element={<PackageDetailPage />} />
               <Route path="/alerts" element={<AlertsPage />} />
               <Route path="/crawler" element={<CrawlerPage />} />
+              <Route path="/blast-radius" element={<BlastRadiusPage />} />
+              <Route path="/forensics" element={<ForensicsPage />} />
+              <Route path="/threat-intel" element={<ThreatIntelligence />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/404" element={<NotFoundPage />} />
               <Route path="*" element={<Navigate to="/404" replace />} />
