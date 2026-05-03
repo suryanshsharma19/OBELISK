@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import Plot from 'react-plotly.js';
 import Loader from '../components/common/Loader';
 
+import { API_BASE_URL } from '../utils/constants';
+
 export default function ThreatIntelligence() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -11,7 +13,7 @@ export default function ThreatIntelligence() {
     const fetchCTI = async () => {
       try {
         const token = localStorage.getItem('obelisk_token');
-        const res = await fetch('/api/stats/threat-intelligence', {
+        const res = await fetch(`${API_BASE_URL}/api/stats/threat-intelligence`, {
           headers: {
             ...(token && { Authorization: `Bearer ${token}` })
           }
@@ -104,7 +106,7 @@ export default function ThreatIntelligence() {
 
       <div className="flex-1 w-full rounded-xl overflow-hidden shadow-2xl border border-slate-700 bg-slate-800">
         <Plot
-          data={plotData}
+          data={plotData as any}
           layout={layout as any}
           useResizeHandler={true}
           style={{ width: '100%', height: '100%' }}
