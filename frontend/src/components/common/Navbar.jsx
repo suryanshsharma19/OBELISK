@@ -12,12 +12,18 @@ import {
   AlertTriangle,
   Bot,
   Settings,
+  Radar,
+  Network,
+  Clock
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/analyze', label: 'Analyze', icon: Search },
   { to: '/packages', label: 'Packages', icon: Package },
+  { to: '/blast-radius', label: 'Blast Radius', icon: Network },
+  { to: '/forensics', label: 'Forensics', icon: Clock },
+  { to: '/threat-intel', label: 'Threat Intel', icon: Radar },
   { to: '/alerts', label: 'Alerts', icon: AlertTriangle },
   { to: '/crawler', label: 'Crawler', icon: Bot },
   { to: '/settings', label: 'Settings', icon: Settings },
