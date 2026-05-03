@@ -10,6 +10,7 @@ import EvidenceCard from './EvidenceCard';
 import CodeViewer from './CodeViewer';
 import DependencyGraph from './DependencyGraph';
 import Loader from '../common/Loader';
+import { API_BASE_URL } from '../../utils/constants';
 
 function buildGraphFromDetection(pkg, detectionDetails) {
   const depEvidence = detectionDetails?.dependency?.evidence || {};
@@ -76,7 +77,7 @@ export default function AnalysisResult() {
     try {
       const pkg_id = pkg.id || analysisResult.id || pkg.name || 'unknown';
       const token = localStorage.getItem('obelisk_token');
-      const response = await fetch(`/api/v1/packages/${pkg_id}/neutralize`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/packages/${pkg_id}/neutralize`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
