@@ -52,14 +52,14 @@ export default function ThreatChart({ trend = [] }) {
           <Legend />
           <Area
             type="monotone"
-            dataKey="scanned"
+            dataKey="packages_scanned"
             stroke="#3b82f6"
             fill="url(#gradScanned)"
             name="Scanned"
           />
           <Area
             type="monotone"
-            dataKey="threats"
+            dataKey="threats_detected"
             stroke="#ef4444"
             fill="url(#gradThreats)"
             name="Threats"
