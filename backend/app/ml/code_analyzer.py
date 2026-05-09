@@ -148,7 +148,7 @@ class CodeAnalyzer(BaseDetector):
                 logger.warning("Bad regex pattern %r: %s", pattern, exc)
         return compiled
 
-    def load_model(self) -> None:
+    def load_model(self, *, strict: bool = False) -> None:
         try:
             from pathlib import Path
 
@@ -161,6 +161,8 @@ class CodeAnalyzer(BaseDetector):
                 self._model = None
                 self._tokenizer = None
                 self._tokenizer_source = None
+                if strict:
+                    raise RuntimeError(f"CodeBERT model path missing: {model_path}")
                 return
 
             self._model = AutoModelForSequenceClassification.from_pretrained(str(model_path), local_files_only=True)
@@ -179,6 +181,8 @@ class CodeAnalyzer(BaseDetector):
             self._model = None
             self._tokenizer = None
             self._tokenizer_source = None
+            if strict:
+                raise RuntimeError(f"CodeBERT model load failed: {exc}") from exc
 
     async def analyze(self, **kwargs: Any) -> DetectionResult:
         code: str = kwargs.get("code", "")

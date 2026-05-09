@@ -1,12 +1,18 @@
 // Client-side validation helpers
 
-const PACKAGE_NAME_RE = /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
+const NPM_PACKAGE_NAME_RE = /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
+const PYPI_PACKAGE_NAME_RE = /^[a-zA-Z0-9\-.*_+!']+$/;
 const SEMVER_RE = /^\d+\.\d+\.\d+(-[\w.]+)?(\+[\w.]+)?$/;
 
-export function isValidPackageName(name) {
+export function isValidPackageName(name, registry = 'npm') {
   if (!name || typeof name !== 'string') return false;
   if (name.length > 214) return false;
-  return PACKAGE_NAME_RE.test(name);
+  
+  if (registry === 'pypi') {
+    return PYPI_PACKAGE_NAME_RE.test(name);
+  }
+  
+  return NPM_PACKAGE_NAME_RE.test(name);
 }
 
 export function isValidVersion(version) {
@@ -28,7 +34,7 @@ export function validateAnalyzeForm({ name, version, registry }) {
 
   if (!name?.trim()) {
     errors.name = 'Package name is required';
-  } else if (!isValidPackageName(name.trim())) {
+  } else if (!isValidPackageName(name.trim(), registry)) {
     errors.name = 'Invalid package name format';
   }
 

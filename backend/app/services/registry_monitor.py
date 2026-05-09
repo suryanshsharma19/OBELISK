@@ -137,9 +137,10 @@ def _normalise_pypi(
     info = raw.get("info", {})
     urls = raw.get("urls", [])
 
+    requires_dist = info.get("requires_dist") or []
     dependencies = {
         dep: ""
-        for dep in info.get("requires_dist", [])
+        for dep in requires_dist
         if isinstance(dep, str)
     }
 

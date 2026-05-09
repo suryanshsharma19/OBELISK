@@ -37,7 +37,7 @@ _gnn = GNNAnalyzer()
 _risk_scorer = RiskScorer()
 
 
-def load_detection_models() -> dict[str, bool]:
+def load_detection_models(*, strict: bool = False) -> dict[str, bool]:
     """Load optional detector models once at startup."""
     statuses: dict[str, bool] = {}
 
@@ -47,14 +47,21 @@ def load_detection_models() -> dict[str, bool]:
         "dependency": _gnn,
     }
 
+    required_on_strict = {"code_analysis"}
+
     for name, detector in loaders.items():
         try:
-            detector.load_model()
+            if name == "code_analysis":
+                detector.load_model(strict=strict)
+            else:
+                detector.load_model()
             statuses[name] = True
             logger.info("Model loader executed for detector=%s", name)
         except Exception as exc:
             statuses[name] = False
             logger.warning("Model loader failed for detector=%s: %s", name, exc)
+            if strict and name in required_on_strict:
+                raise
 
     return statuses
 
